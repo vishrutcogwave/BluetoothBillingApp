@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget
+    id="com.cogwave.apk"
+    version="1.0.0"
+    xmlns="http://www.w3.org/ns/widgets"
+    xmlns:cdv="http://cordova.apache.org/ns/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <name>CogwaveApp</name>
+
+    <description>
+        Cogwave Bluetooth Printing App
+    </description>
+
+    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
+        Cogwave
+    </author>
+
+    <content src="index.html" />
+
+    <!-- Allow SPA navigation -->
+    <allow-navigation href="*" />
+    <allow-intent href="*" />
+
+    <!-- Android specific -->
+    <platform name="android">
+
+        <!-- Bluetooth Classic + Android 12+ -->
+        <uses-permission android:name="android.permission.BLUETOOTH" />
+        <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+        <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+        <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
+        <!-- Needed for device discovery -->
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+        <!-- Recommended -->
+        <preference name="AndroidPersistentFileLocation" value="Internal" />
+
+        <preference name="android-minSdkVersion" value="22" />
+       <preference name="android-targetSdkVersion" value="33" />
+<preference name="android-compileSdkVersion" value="33" />
+
+
+    </platform>
+
+</widget>

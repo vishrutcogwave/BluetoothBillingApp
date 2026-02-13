@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kiosk-friendly scaling */
+html {
+  font-size: clamp(14px, 1.2vw, 18px);
+}
+
+/* Disable text selection (touch kiosks) */
+* {
+  user-select: none;
+}

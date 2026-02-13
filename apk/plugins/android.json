@@ -1,0 +1,21 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {}
+  },
+  "installed_plugins": {
+    "cordova-plugin-android-permissions": {
+      "PACKAGE_NAME": "com.cogwave.apk"
+    },
+    "cordova-plugin-device": {
+      "PACKAGE_NAME": "com.cogwave.apk"
+    },
+    "cordova-plugin-bluetooth-serial": {
+      "PACKAGE_NAME": "com.cogwave.apk"
+    }
+  },
+  "dependent_plugins": {}
+}

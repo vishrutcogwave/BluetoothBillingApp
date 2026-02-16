@@ -7,7 +7,7 @@ import { printerService } from "../services/printerService";
 import PrinterSelector from "../components/PrinterSelector";
 import { useOutlet } from "../context/OutletContext";
 
-import { getBill, getCardTypes, getonlineTypes, submitBill } from "../api/kotService";
+import { getBill, getbillnouseorderid, getCardTypes, getonlineTypes, submitBill } from "../api/kotService";
 import { useCompany } from "../context/CompanyContext";
 import SalesReport from "./SalesReport";
 
@@ -224,6 +224,11 @@ useEffect(() => {
 
       // ✅ use centralized API
       const res2 = await submitBill(payload2);
+      const res3 = await getbillnouseorderid(transactionId);
+      console.log("res3",res3);
+      
+
+
       console.log("Backend Bill 👉", res2);
 
       if (!res2.success) {
@@ -231,7 +236,7 @@ useEffect(() => {
         return;
       }
 
-      await printerService.printBill(items, res, companyInfo);
+      await printerService.printBill(items, res, companyInfo,res3);
 
       dispatch({ type: "CLEAR_CART" });
       navigate("/itemsPage");
@@ -437,7 +442,7 @@ useEffect(() => {
                 <div className="space-y-4 mt-6">
                    {!printerConnected ? (
     <PrinterSelector onConnected={() => setPrinterConnected(true)} />
-  ) : ( 
+  ) : (  
                   <button
                     disabled={loading}
                     onClick={handlePrintBill}
@@ -452,7 +457,7 @@ useEffect(() => {
                   >
                     {loading ? "Processing..." : "Submit & Print 🧾"}
                   </button>
-                  )} 
+                   )}  
 
                   {/* Sales Report Button (Always Visible) */}
                   <button

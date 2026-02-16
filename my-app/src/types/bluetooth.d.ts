@@ -8,6 +8,15 @@ export interface TaxItem {
   TaxAmount: number;
 }
 
+export interface BillDetails {
+  Billno: string;
+  BillDate: string;
+  BillTime: string;
+  OutletName: string;
+  TokenNo: string;
+  OrderId: string;
+}
+
 export interface BillResponse {
   TotalAmount: number;
   TotalQty: number;

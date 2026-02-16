@@ -1,4 +1,4 @@
-import type { BillResponse } from "../types/bluetooth";
+import type { BillDetails, BillResponse } from "../types/bluetooth";
 
 declare const bluetoothSerial: any;
 
@@ -99,10 +99,138 @@ class PrinterService {
   }
 
 
+// async printBill(
+//   items: any[],
+//   bill: BillResponse,
+//   company: any
+// ) {
+//   const ESC = 0x1b;
+//   const bytes: number[] = [];
+//   const WIDTH = 32;
+
+//   const enc = (t: string) =>
+//     Array.from(new TextEncoder().encode(t));
+
+//   const line = "-".repeat(WIDTH);
+
+//   const center = (t: string) =>
+//     t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
+
+//   const row = (l: string, v: string) =>
+//     `${l.padEnd(WIDTH - v.length)}${v}\n`;
+
+//   const now = new Date();
+//   const date = now.toLocaleDateString("en-GB");
+//   const time = now.toLocaleTimeString("en-GB", {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//   });
+
+//   /* ================= HEADER ================= */
+//   bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
+
+//   bytes.push(
+//     ...enc(center(company?.Company_Name ?? "") + "\n")
+//   );
+
+//   bytes.push(ESC, 0x45, 0x00);
+
+//   if (company?.Address1)
+//     bytes.push(...enc(center(company.Address1) + "\n"));
+
+//   if (company?.Address2)
+//     bytes.push(...enc(center(company.Address2) + "\n"));
+
+//   if (company?.Phone_number)
+//     bytes.push(
+//       ...enc(center(`PH: ${company.Phone_number}`) + "\n")
+//     );
+
+//   if (company?.Tin_no)
+//     bytes.push(
+//       ...enc(center(`GSTIN: ${company.Tin_no}`) + "\n")
+//     );
+
+//   bytes.push(...enc(line + "\n"));
+
+//   /* ================= BILL INFO ================= */
+//   bytes.push(ESC, 0x61, 0x00);
+//   bytes.push(...enc(`Date : ${date}\n`));
+//   bytes.push(...enc(`Time : ${time}\n`));
+//   bytes.push(...enc(line + "\n"));
+
+//   /* ================= ITEMS ================= */
+//   bytes.push(...enc("ITEM        QTY   RATE   AMT\n"));
+//   bytes.push(...enc(line + "\n"));
+
+//   items.forEach((item) => {
+//     const amt = item.price * item.qty;
+
+//     const name = item.name.slice(0, 12).padEnd(12);
+//     const qty = String(item.qty).padStart(3);
+//     const rate = item.price.toFixed(2).padStart(7);
+//     const total = amt.toFixed(2).padStart(7);
+
+//     bytes.push(...enc(`${name} ${qty} ${rate} ${total}\n`));
+//   });
+
+//   bytes.push(...enc(line + "\n"));
+
+//   /* ================= TOTALS (BACKEND) ================= */
+//   bytes.push(
+//     ...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`))
+//   );
+
+//   bill.TaxList?.forEach((tax) => {
+//     bytes.push(
+//       ...enc(
+//         row(
+//           tax.TaxName,
+//           `Rs ${tax.TaxAmount.toFixed(2)}`
+//         )
+//       )
+//     );
+//   });
+
+//   if (bill.ServiceCharge > 0) {
+//     bytes.push(
+//       ...enc(row("Service Charge", `Rs ${bill.ServiceCharge.toFixed(2)}`))
+//     );
+//   }
+
+//   if (bill.Discount > 0) {
+//     bytes.push(
+//       ...enc(row("Discount", `Rs ${bill.Discount.toFixed(2)}`))
+//     );
+//   }
+
+//   bytes.push(
+//     ...enc(row("Round Off", `Rs ${bill.RoundOff.toFixed(2)}`))
+//   );
+
+//   bytes.push(...enc(line + "\n"));
+
+//   /* ================= GRAND TOTAL ================= */
+//   bytes.push(ESC, 0x45, 0x01);
+//   bytes.push(
+//     ...enc(
+//       center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"
+//     )
+//   );
+//   bytes.push(ESC, 0x45, 0x00);
+
+//   bytes.push(...enc("\nThank You! Visit Again 🙏\n\n\n"));
+
+//   await this.write(new Uint8Array(bytes));
+// }
+
+
+
 async printBill(
   items: any[],
   bill: BillResponse,
-  company: any
+  company: any,
+  billDetails?: BillDetails // ✅ new parameter
 ) {
   const ESC = 0x1b;
   const bytes: number[] = [];
@@ -119,44 +247,40 @@ async printBill(
   const row = (l: string, v: string) =>
     `${l.padEnd(WIDTH - v.length)}${v}\n`;
 
-  const now = new Date();
-  const date = now.toLocaleDateString("en-GB");
-  const time = now.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
   /* ================= HEADER ================= */
   bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-
-  bytes.push(
-    ...enc(center(company?.Company_Name ?? "") + "\n")
-  );
-
+  bytes.push(...enc(center(company?.Company_Name ?? "") + "\n"));
   bytes.push(ESC, 0x45, 0x00);
 
-  if (company?.Address1)
-    bytes.push(...enc(center(company.Address1) + "\n"));
-
-  if (company?.Address2)
-    bytes.push(...enc(center(company.Address2) + "\n"));
-
+  if (company?.Address1) bytes.push(...enc(center(company.Address1) + "\n"));
+  if (company?.Address2) bytes.push(...enc(center(company.Address2) + "\n"));
   if (company?.Phone_number)
-    bytes.push(
-      ...enc(center(`PH: ${company.Phone_number}`) + "\n")
-    );
-
+    bytes.push(...enc(center(`PH: ${company.Phone_number}`) + "\n"));
   if (company?.Tin_no)
-    bytes.push(
-      ...enc(center(`GSTIN: ${company.Tin_no}`) + "\n")
-    );
+    bytes.push(...enc(center(`GSTIN: ${company.Tin_no}`) + "\n"));
 
   bytes.push(...enc(line + "\n"));
 
   /* ================= BILL INFO ================= */
   bytes.push(ESC, 0x61, 0x00);
-  bytes.push(...enc(`Date : ${date}\n`));
-  bytes.push(...enc(`Time : ${time}\n`));
+
+  // Use billDetails parameter if available, else fallback to current date/time
+  const date = billDetails?.BillDate ?? new Date().toLocaleDateString("en-GB");
+  const time = billDetails?.BillTime ?? new Date().toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const billNo = billDetails?.Billno ?? "";
+  const outlet = billDetails?.OutletName ?? "";
+  const token = billDetails?.TokenNo ?? "";
+  const orderId = billDetails?.OrderId ?? "";
+
+  if (outlet) bytes.push(...enc(center(`Outlet: ${outlet}`) + "\n"));
+  if (billNo) bytes.push(...enc(`Bill No : ${billNo}\n`));
+  if (token) bytes.push(...enc(`Token   : ${token}\n`));
+  bytes.push(...enc(`Date    : ${date}\n`));
+  bytes.push(...enc(`Time    : ${time}\n`));
+  if (orderId) bytes.push(...enc(`OrderId : ${orderId}\n`));
   bytes.push(...enc(line + "\n"));
 
   /* ================= ITEMS ================= */
@@ -165,7 +289,6 @@ async printBill(
 
   items.forEach((item) => {
     const amt = item.price * item.qty;
-
     const name = item.name.slice(0, 12).padEnd(12);
     const qty = String(item.qty).padStart(3);
     const rate = item.price.toFixed(2).padStart(7);
@@ -176,53 +299,35 @@ async printBill(
 
   bytes.push(...enc(line + "\n"));
 
-  /* ================= TOTALS (BACKEND) ================= */
-  bytes.push(
-    ...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`))
-  );
+  /* ================= TOTALS ================= */
+  bytes.push(...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`)));
 
   bill.TaxList?.forEach((tax) => {
-    bytes.push(
-      ...enc(
-        row(
-          tax.TaxName,
-          `Rs ${tax.TaxAmount.toFixed(2)}`
-        )
-      )
-    );
+    bytes.push(...enc(row(tax.TaxName, `Rs ${tax.TaxAmount.toFixed(2)}`)));
   });
 
   if (bill.ServiceCharge > 0) {
-    bytes.push(
-      ...enc(row("Service Charge", `Rs ${bill.ServiceCharge.toFixed(2)}`))
-    );
+    bytes.push(...enc(row("Service Charge", `Rs ${bill.ServiceCharge.toFixed(2)}`)));
   }
 
   if (bill.Discount > 0) {
-    bytes.push(
-      ...enc(row("Discount", `Rs ${bill.Discount.toFixed(2)}`))
-    );
+    bytes.push(...enc(row("Discount", `Rs ${bill.Discount.toFixed(2)}`)));
   }
 
-  bytes.push(
-    ...enc(row("Round Off", `Rs ${bill.RoundOff.toFixed(2)}`))
-  );
-
+  bytes.push(...enc(row("Round Off", `Rs ${bill.RoundOff.toFixed(2)}`)));
   bytes.push(...enc(line + "\n"));
 
   /* ================= GRAND TOTAL ================= */
   bytes.push(ESC, 0x45, 0x01);
-  bytes.push(
-    ...enc(
-      center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"
-    )
-  );
+  bytes.push(...enc(center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"));
   bytes.push(ESC, 0x45, 0x00);
 
   bytes.push(...enc("\nThank You! Visit Again 🙏\n\n\n"));
 
   await this.write(new Uint8Array(bytes));
 }
+
+
 
 
 }

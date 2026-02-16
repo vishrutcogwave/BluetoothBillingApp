@@ -112,7 +112,7 @@ export const getonlineTypes = async (): Promise<any> => {
 
 export const submitBill = async (bill: any): Promise<any> => {
   const response = await axiosInstance.post(
-    "/api/kot/submitOrderdirectbill",
+    "/api/kot/submitOrderdirectbillnew",
     bill,
   );
   return response.data;
@@ -135,6 +135,14 @@ export const getOutlets = async (): Promise<any[]> => {
 
 export const getcompanyinfobill = async (): Promise<any> => {
   const response = await axiosInstance.get("/api/kot/getcompanyinfobill");
+  return response.data;
+};
+export const getbillnouseorderid = async (transactionId: any): Promise<any> => {
+  const response = await axiosInstance.get("/api/kot/getbillnouseorderid", {
+    params: {
+      OrderId: transactionId
+    }
+  });
   return response.data;
 };
 

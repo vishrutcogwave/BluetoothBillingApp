@@ -99,6 +99,15 @@ export const getBill = async (bill: BillPayload): Promise<any> => {
   const response = await axiosInstance.post("/api/kot/getbill", bill);
   return response.data;
 };
+export const getCardTypes = async (): Promise<any> => {
+  const response = await axiosInstance.get("/api/kot/getcards");
+  return response.data;
+};
+export const getonlineTypes = async (): Promise<any> => {
+  const response = await axiosInstance.get("/api/kot/getonline");
+  return response.data;
+};
+
 
 
 export const submitBill = async (bill: any): Promise<any> => {

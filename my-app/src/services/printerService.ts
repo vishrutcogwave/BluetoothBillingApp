@@ -265,22 +265,17 @@ async printBill(
   bytes.push(ESC, 0x61, 0x00);
 
   // Use billDetails parameter if available, else fallback to current date/time
-  const date = billDetails?.BillDate ?? new Date().toLocaleDateString("en-GB");
-  const time = billDetails?.BillTime ?? new Date().toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+ 
   const billNo = billDetails?.Billno ?? "";
   const outlet = billDetails?.OutletName ?? "";
-  const token = billDetails?.TokenNo ?? "";
-  const orderId = billDetails?.OrderId ?? "";
+const billdate= billDetails?.BillDate??"";
+const billtime= billDetails?.BillTime??"";
+
 
   if (outlet) bytes.push(...enc(center(`Outlet: ${outlet}`) + "\n"));
   if (billNo) bytes.push(...enc(`Bill No : ${billNo}\n`));
-  if (token) bytes.push(...enc(`Token   : ${token}\n`));
-  bytes.push(...enc(`Date    : ${date}\n`));
-  bytes.push(...enc(`Time    : ${time}\n`));
-  if (orderId) bytes.push(...enc(`OrderId : ${orderId}\n`));
+  bytes.push(...enc(`Date    : ${billdate}\n`));
+  bytes.push(...enc(`Time    : ${billtime}\n`));
   bytes.push(...enc(line + "\n"));
 
   /* ================= ITEMS ================= */

@@ -236,7 +236,7 @@ useEffect(() => {
         return;
       }
 
-      await printerService.printBill(items, res, companyInfo,res3);
+      await printerService.printBill(items, res, companyInfo,res3.billdetails );
 
       dispatch({ type: "CLEAR_CART" });
       navigate("/itemsPage");

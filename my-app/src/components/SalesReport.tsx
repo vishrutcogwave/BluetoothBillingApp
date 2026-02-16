@@ -1,22 +1,16 @@
+
 import React from "react";
 import { ArrowLeft } from "lucide-react";
 
 /* ================= TYPES ================= */
 
-type PaymentMethod = {
-  label: "Cash" | "Card" | "Online";
-  value: number;
-  color: string;
-};
-
+type PaymentMethod = "Cash" | "Card" | "Online";
 type TransactionStatus = "Completed" | "Processing" | "Failed";
 
 type Transaction = {
   invoice: string;
-  name: string;
-  email: string;
   status: TransactionStatus;
-  method: "Cash" | "Card" | "Online";
+  method: PaymentMethod;
   amount: number;
 };
 
@@ -26,117 +20,91 @@ type SalesReportProps = {
 
 /* ================= DATA ================= */
 
-const paymentData: PaymentMethod[] = [
+const paymentData = [
   { label: "Cash", value: 40, color: "bg-green-500" },
   { label: "Card", value: 80, color: "bg-blue-500" },
   { label: "Online", value: 60, color: "bg-purple-500" },
 ];
 
 const transactions: Transaction[] = [
-  {
-    invoice: "TX-1001",
-    name: "Alice",
-    email: "alice@example.com",
-    status: "Completed",
-    method: "Card",
-    amount: 250,
-  },
-  {
-    invoice: "TX-1002",
-    name: "Bob",
-    email: "bob@example.com",
-    status: "Completed",
-    method: "Card",
-    amount: 120,
-  },
-  {
-    invoice: "TX-1003",
-    name: "Charlie",
-    email: "charlie@example.com",
-    status: "Completed",
-    method: "Cash",
-    amount: 300,
-  },
-  {
-    invoice: "TX-1004",
-    name: "David",
-    email: "david@example.com",
-    status: "Processing",
-    method: "Online",
-    amount: 90,
-  },
-  {
-    invoice: "TX-1005",
-    name: "Eva",
-    email: "eva@example.com",
-    status: "Completed",
-    method: "Online",
-    amount: 150,
-  },
+  { invoice: "2526/16421", status: "Completed", method: "Cash", amount: 100 },
+  { invoice: "2526/16422", status: "Completed", method: "Card", amount: 1135 },
+  { invoice: "2526/16423", status: "Completed", method: "Online", amount: 236 },
+  { invoice: "2526/16424", status: "Completed", method: "Online", amount: 803 },
+  { invoice: "2526/16425", status: "Completed", method: "Card", amount: 278 },
 ];
 
 /* ================= COMPONENT ================= */
 
 const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
-  const maxValue = Math.max(...paymentData.map((p) => p.value));
+  const completedTx = transactions.filter(
+    (t) => t.status === "Completed"
+  );
 
-  /* Count completed transactions per method */
-  const completedCountByMethod: Record<
-    PaymentMethod["label"],
-    number
-  > = { Cash: 0, Card: 0, Online: 0 };
+  const gstAmount = completedTx.reduce(
+    (sum, t) => sum + t.amount * 0.05,
+    0
+  );
 
-  transactions.forEach((tx) => {
-    if (tx.status === "Completed") {
-      completedCountByMethod[tx.method]++;
-    }
-  });
+  const totalNetAmount = completedTx.reduce(
+    (sum, t) => sum + t.amount,
+    0
+  );
+
+  const totalsByMethod = {
+    Cash: completedTx.filter(t => t.method === "Cash")
+      .reduce((s, t) => s + t.amount, 0),
+    Card: completedTx.filter(t => t.method === "Card")
+      .reduce((s, t) => s + t.amount, 0),
+    Online: completedTx.filter(t => t.method === "Online")
+      .reduce((s, t) => s + t.amount, 0),
+  };
+
+  const maxValue = Math.max(...paymentData.map(p => p.value));
 
   return (
-    <div className="p-3 md:p-6 space-y-6">
+    <div className="p-3 md:p-4 space-y-4 bg-gray-100 min-h-screen">
       {/* HEADER */}
-      <div>
+      <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3"
+          className="text-gray-600 hover:text-gray-900"
         >
-          <ArrowLeft size={20} /> Back
+          <ArrowLeft size={20} />
         </button>
-
-        <h1 className="text-xl md:text-2xl font-bold">
+        <h1 className="text-lg font-bold">
           Sales Report
         </h1>
-        <p className="text-xs md:text-sm text-gray-500">
-          Completed transactions count by payment method
-        </p>
       </div>
 
-      {/* PAYMENT METHODS */}
-      <div className="bg-white rounded-xl shadow p-4">
-        <h2 className="font-semibold text-base md:text-lg mb-4">
+      {/* ================= GRAPH ================= */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h2 className="text-sm font-semibold mb-3">
           Payment Methods
         </h2>
 
-        <div className="flex items-end justify-around h-48 md:h-56">
+        <div className="flex items-end justify-evenly h-44">
           {paymentData.map((item) => (
             <div
               key={item.label}
-              className="flex flex-col items-center gap-1"
+              className="flex flex-col items-center"
             >
-              {/* COUNT */}
-              <span className="text-sm md:text-lg font-bold">
-                {completedCountByMethod[item.label]}
+              <span className="text-xs font-bold mb-1">
+                {
+                  completedTx.filter(
+                    (t) => t.method === item.label
+                  ).length
+                }
               </span>
 
-              {/* BAR */}
               <div
-                className={`w-8 md:w-14 rounded-md ${item.color}`}
+                className={`w-10 rounded ${item.color}`}
                 style={{
-                  height: `${(item.value / maxValue) * 150}px`,
+                  height: `${(item.value / maxValue) * 120}px`,
                 }}
               />
 
-              <span className="text-xs md:text-sm text-gray-600">
+              <span className="text-xs mt-1 text-gray-600">
                 {item.label}
               </span>
             </div>
@@ -144,102 +112,68 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* ================= MOBILE TRANSACTIONS ================= */}
-      <div className="md:hidden space-y-3">
-        <h2 className="font-semibold text-base">
-          Recent Transactions
+      {/* ================= SALES TABLE ================= */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h2 className="text-sm font-semibold mb-2">
+          Sales Summary
         </h2>
 
-        {transactions.map((tx) => (
-          <div
-            key={tx.invoice}
-            className="bg-white rounded-lg shadow p-3"
-          >
-            <div className="flex justify-between items-center">
-              <span className="font-semibold">
-                {tx.invoice}
-              </span>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  tx.status === "Completed"
-                    ? "bg-green-100 text-green-700"
-                    : tx.status === "Processing"
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-red-100 text-red-700"
-                }`}
-              >
-                {tx.status}
-              </span>
-            </div>
-
-            <p className="text-sm font-medium mt-1">
-              {tx.name}
-            </p>
-            <p className="text-xs text-gray-500">
-              {tx.email}
-            </p>
-
-            <p className="text-xs mt-1">
-              Method:{" "}
-              <span className="font-medium">
-                {tx.method}
-              </span>
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* ================= DESKTOP TABLE ================= */}
-      <div className="hidden md:block bg-white rounded-xl shadow p-4">
-        <h2 className="font-semibold text-lg mb-4">
-          Recent Transactions
-        </h2>
-
-        <table className="w-full text-sm">
-          <thead className="border-b text-gray-500">
-            <tr>
-              <th className="text-left py-2">Invoice</th>
-              <th className="text-left py-2">Customer</th>
-              <th className="text-left py-2">Status</th>
-              <th className="text-left py-2">Method</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {transactions.map((tx) => (
-              <tr
-                key={tx.invoice}
-                className="border-b last:border-none"
-              >
-                <td className="py-3 font-medium">
-                  {tx.invoice}
-                </td>
-                <td>
-                  <div className="font-medium">
-                    {tx.name}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {tx.email}
-                  </div>
-                </td>
-                <td>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      tx.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : tx.status === "Processing"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {tx.status}
-                  </span>
-                </td>
-                <td>{tx.method}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border border-gray-300">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="border px-2 py-1 text-left">
+                  BILL NO
+                </th>
+                <th className="border px-2 py-1 text-right">
+                  NET AMT
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {completedTx.map((tx) => (
+                <tr key={tx.invoice}>
+                  <td className="border px-2 py-1">
+                    {tx.invoice}
+                  </td>
+                  <td className="border px-2 py-1 text-right">
+                    ₹ {tx.amount.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* TOTALS */}
+      {/* TOTALS CARD */}
+<div className="mt-4 border rounded-md p-3 text-xs">
+  <div className="flex justify-between">
+    <span>GST :</span>
+    <span>₹ {gstAmount.toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>CASH :</span>
+    <span>₹ {totalsByMethod.Cash.toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>CARD :</span>
+    <span>₹ {totalsByMethod.Card.toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>ONLINE :</span>
+    <span>₹ {totalsByMethod.Online.toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between font-bold border-t mt-2 pt-1">
+    <span>TOTAL :</span>
+    <span>₹ {totalNetAmount.toFixed(2)}</span>
+  </div>
+</div>
+
       </div>
     </div>
   );

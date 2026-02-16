@@ -7,7 +7,13 @@ import { printerService } from "../services/printerService";
 import PrinterSelector from "../components/PrinterSelector";
 import { useOutlet } from "../context/OutletContext";
 
-import { getBill, getbillnouseorderid, getCardTypes, getonlineTypes, submitBill } from "../api/kotService";
+import {
+  getBill,
+  getbillnouseorderid,
+  getCardTypes,
+  getonlineTypes,
+  submitBill,
+} from "../api/kotService";
 import { useCompany } from "../context/CompanyContext";
 import SalesReport from "./SalesReport";
 
@@ -32,33 +38,32 @@ const CartPage = () => {
   const [paymentMode, setPaymentMode] = useState<"CASH" | "CARD" | "ONLINE">(
     "CASH",
   );
-const [cardTypes, setCardTypes] = useState<any[]>([]);
-const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [cardTypes, setCardTypes] = useState<any[]>([]);
+  const [selectedCard, setSelectedCard] = useState<any>(null);
 
-const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
-const [selectedOnline, setSelectedOnline] = useState<any>(null);
+  const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
+  const [selectedOnline, setSelectedOnline] = useState<any>(null);
 
+  useEffect(() => {
+    const fetchPaymentTypes = async () => {
+      try {
+        const cardRes = await getCardTypes();
+        const onlineRes = await getonlineTypes();
 
-useEffect(() => {
-  const fetchPaymentTypes = async () => {
-    try {
-      const cardRes = await getCardTypes();
-      const onlineRes = await getonlineTypes();
+        console.log("Cards 👉", cardRes);
+        console.log("Online 👉", onlineRes);
 
-      console.log("Cards 👉", cardRes);
-      console.log("Online 👉", onlineRes);
+        setCardTypes(Array.isArray(cardRes) ? cardRes : cardRes?.data || []);
+        setOnlineTypes(
+          Array.isArray(onlineRes) ? onlineRes : onlineRes?.data || [],
+        );
+      } catch (error) {
+        console.error("Error fetching payment types:", error);
+      }
+    };
 
-      setCardTypes(Array.isArray(cardRes) ? cardRes : cardRes?.data || []);
-      setOnlineTypes(Array.isArray(onlineRes) ? onlineRes : onlineRes?.data || []);
-    } catch (error) {
-      console.error("Error fetching payment types:", error);
-    }
-  };
-
-  fetchPaymentTypes();
-}, []);
-
-
+    fetchPaymentTypes();
+  }, []);
 
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
@@ -225,9 +230,7 @@ useEffect(() => {
       // ✅ use centralized API
       const res2 = await submitBill(payload2);
       const res3 = await getbillnouseorderid(transactionId);
-      console.log("res3",res3);
-      
-
+      console.log("res3", res3);
 
       console.log("Backend Bill 👉", res2);
 
@@ -236,7 +239,7 @@ useEffect(() => {
         return;
       }
 
-      await printerService.printBill(items, res, companyInfo,res3.billdetails );
+      await printerService.printBill(items, res, companyInfo, res3.billdetails);
 
       dispatch({ type: "CLEAR_CART" });
       navigate("/itemsPage");
@@ -335,75 +338,79 @@ useEffect(() => {
               </div>
 
               {/* PAYMENT MODE */}
-            <div className="mt-4">
-  <h3 className="font-medium mb-2">Payment Mode</h3>
+              <div className="mt-4">
+                <h3 className="font-medium mb-2">Payment Mode</h3>
 
-  {/* Main Modes */}
-  <div className="grid grid-cols-3 gap-2">
-    {["CASH", "CARD", "ONLINE"].map((mode) => (
-      <button
-        key={mode}
-        onClick={() => setPaymentMode(mode as any)}
-        className={`py-2 rounded-lg border text-sm font-medium transition 
+                {/* Main Modes */}
+                <div className="grid grid-cols-3 gap-2">
+                  {["CASH", "CARD", "ONLINE"].map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setPaymentMode(mode as any)}
+                      className={`py-2 rounded-lg border text-sm font-medium transition 
           ${
             paymentMode === mode
               ? "bg-blue-600 text-white border-blue-600"
               : "bg-white text-gray-700"
           }`}
-      >
-        {mode}
-      </button>
-    ))}
-  </div>
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
 
-  {/* CARD OPTIONS (From API) */}
-  {paymentMode === "CARD" && (
-    <div className="mt-3 grid grid-cols-2 gap-2">
-      {cardTypes.length === 0 ? (
-        <p className="text-sm text-gray-500">Loading card types...</p>
-      ) : (
-        cardTypes.map((card) => (
-          <button
-            key={card.CardId}
-            onClick={() => setSelectedCard(card)}
-            className={`py-2 rounded-lg border text-sm transition 
+                {/* CARD OPTIONS (From API) */}
+                {paymentMode === "CARD" && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {cardTypes.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        Loading card types...
+                      </p>
+                    ) : (
+                      cardTypes.map((card) => (
+                        <button
+                          key={card.CardId}
+                          onClick={() => setSelectedCard(card)}
+                          className={`py-2 rounded-lg border text-sm transition 
               ${
                 selectedCard?.CardId === card.CardId
                   ? "bg-green-600 text-white border-green-600"
                   : "bg-white"
               }`}
-          >
-            {card.CardType}
-          </button>
-        ))
-      )}
-    </div>
-  )}
+                        >
+                          {card.CardType}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
 
-  {/* ONLINE OPTIONS (From API) */}
-  {paymentMode === "ONLINE" && (
-    <div className="mt-3 grid grid-cols-2 gap-2">
-      {onlineTypes.length === 0 ? (
-        <p className="text-sm text-gray-500">Loading online types...</p>
-      ) : (
-        onlineTypes.map((online) => (
-          <button
-            key={online.CardId}
-            onClick={() => setSelectedOnline(online)}
-            className={`py-2 rounded-lg border text-sm transition 
+                {/* ONLINE OPTIONS (From API) */}
+                {paymentMode === "ONLINE" && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {onlineTypes.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        Loading online types...
+                      </p>
+                    ) : (
+                      onlineTypes.map((online) => (
+                        <button
+                          key={online.CardId}
+                          onClick={() => setSelectedOnline(online)}
+                          className={`py-2 rounded-lg border text-sm transition 
               ${
                 selectedOnline?.CardId === online.CardId
                   ? "bg-purple-600 text-white border-purple-600"
                   : "bg-white"
               }`}
-          >
-            {online.CardType}
-          </button>
-        ))
-      )}
-    </div>
-  )}
-</div>
+                        >
+                          {online.CardType}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* SUMMARY + PRINTER */}
               <div className="w-full max-w-md bg-gray-50 rounded-2xl p-6 shadow">
@@ -440,24 +447,26 @@ useEffect(() => {
                   Sales Report
                 </button> */}
                 <div className="space-y-4 mt-6">
-                   {!printerConnected ? (
-    <PrinterSelector onConnected={() => setPrinterConnected(true)} />
-  ) : (  
-                  <button
-                    disabled={loading}
-                    onClick={handlePrintBill}
-                    className="w-full text-white font-semibold py-3 rounded-xl transition"
-                    style={{ backgroundColor: mainBlue }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.backgroundColor = hoverBlue)
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.backgroundColor = mainBlue)
-                    }
-                  >
-                    {loading ? "Processing..." : "Submit & Print 🧾"}
-                  </button>
-                   )}  
+                  {!printerConnected ? (
+                    <PrinterSelector
+                      onConnected={() => setPrinterConnected(true)}
+                    />
+                  ) : (
+                    <button
+                      disabled={loading}
+                      onClick={handlePrintBill}
+                      className="w-full text-white font-semibold py-3 rounded-xl transition"
+                      style={{ backgroundColor: mainBlue }}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor = hoverBlue)
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor = mainBlue)
+                      }
+                    >
+                      {loading ? "Processing..." : "Submit & Print 🧾"}
+                    </button>
+                  )}
 
                   {/* Sales Report Button (Always Visible) */}
                   <button

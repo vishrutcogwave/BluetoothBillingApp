@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FALLBACK_IMAGE, type Category } from "../utils";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   getcompanyinfobill,
   getFoodCategories,
@@ -16,6 +16,7 @@ import Loginpage from "./Loginpage";
 import { useOutlet } from "../context/OutletContext";
 import { useCompany } from "../context/CompanyContext";
 import { retryRequest } from "../components/retryRequest";
+import SalesReport from "../components/SalesReport";
 
 export default function LandingPage() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
@@ -26,7 +27,7 @@ export default function LandingPage() {
   const { selectedOutlet } = useOutlet();
   console.log(selectedOutlet, "selectedOutlet");
   const { companyInfo, dispatch } = useCompany();
-
+const navi = useNavigate()
   const fetchCompanyInfo = async () => {
     try {
       if (companyInfo) return;
@@ -109,11 +110,12 @@ export default function LandingPage() {
 
     fetchItems();
   }, [activeCategory]);
-const isLogin = location.pathname === "/" || location.pathname === "/cart";
+const isLogin = location.pathname === "/" || location.pathname === "/cart"|| location.pathname === "/sales-report";
   return (
     <CartProvider>
       <div className="min-h-screen flex bg-gray-100">
         {location.pathname !== "/cart" &&
+        location.pathname !== "/sales-report" &&
           location.pathname !== "/" &&
           activeCategory !== null && (
             <CategorySidebar
@@ -150,6 +152,10 @@ const isLogin = location.pathname === "/" || location.pathname === "/cart";
             />
 
             <Route path="/cart" element={<CartPage />} />
+              <Route 
+    path="/sales-report" 
+    element={<SalesReport onBack={()=>navi("/itemsPage")} />} 
+  />
           </Routes>
         </main>
       </div>

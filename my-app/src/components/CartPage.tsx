@@ -469,19 +469,7 @@ const CartPage = () => {
                   )}
 
                   {/* Sales Report Button (Always Visible) */}
-                  <button
-                    onClick={() => setActivePage("sales")}
-                    className="w-full text-white font-semibold py-3 rounded-xl transition"
-                    style={{ backgroundColor: mainBlue }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.backgroundColor = hoverBlue)
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.backgroundColor = mainBlue)
-                    }
-                  >
-                    Sales Report 📊
-                  </button>
+            
                 </div>
               </div>
             </div>

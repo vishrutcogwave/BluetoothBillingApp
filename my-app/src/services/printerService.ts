@@ -321,6 +321,83 @@ const billtime= billDetails?.BillTime??"";
 
   await this.write(new Uint8Array(bytes));
 }
+async printSalesReport(params: {
+  outletName: string;
+  fromDate: string;
+  toDate: string;
+  bills: {
+    BillNo: string;
+    Grand: number;
+  }[];
+  totals: {
+    gst: number;
+    cash: number;
+    card: number;
+    online: number;
+    total: number;
+  };
+}) {
+  const ESC = 0x1b;
+  const WIDTH = 32;
+  const bytes: number[] = [];
+
+  const enc = (t: string) =>
+    Array.from(new TextEncoder().encode(t));
+
+  const line = "-".repeat(WIDTH);
+
+  const center = (t: string) =>
+    t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
+
+  const row = (l: string, v: string) =>
+    `${l.padEnd(WIDTH - v.length)}${v}\n`;
+
+  /* ================= HEADER ================= */
+  bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
+  bytes.push(...enc(center("SALES REPORT") + "\n"));
+  bytes.push(ESC, 0x45, 0x00);
+
+  bytes.push(...enc(center(`Outlet: ${params.outletName}`) + "\n"));
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= DATE RANGE ================= */
+  bytes.push(ESC, 0x61, 0x00);
+  bytes.push(...enc(`From : ${params.fromDate}\n`));
+  bytes.push(...enc(`To   : ${params.toDate}\n`));
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= BILL SUMMARY ================= */
+  bytes.push(...enc("BILL NO           AMT\n"));
+  bytes.push(...enc(line + "\n"));
+
+  params.bills.forEach((b) => {
+    const billNo = b.BillNo.padEnd(16);
+    const amt = b.Grand.toFixed(2).padStart(14);
+    bytes.push(...enc(`${billNo}${amt}\n`));
+  });
+
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= TOTALS ================= */
+  bytes.push(...enc(row("GST", `Rs ${params.totals.gst.toFixed(2)}`)));
+  bytes.push(...enc(row("CASH", `Rs ${params.totals.cash.toFixed(2)}`)));
+  bytes.push(...enc(row("CARD", `Rs ${params.totals.card.toFixed(2)}`)));
+  bytes.push(...enc(row("ONLINE", `Rs ${params.totals.online.toFixed(2)}`)));
+
+  bytes.push(...enc(line + "\n"));
+
+  bytes.push(ESC, 0x45, 0x01);
+  bytes.push(
+    ...enc(
+      center(`TOTAL : Rs ${params.totals.total.toFixed(2)}`) + "\n"
+    )
+  );
+  bytes.push(ESC, 0x45, 0x00);
+
+  bytes.push(...enc("\nThank You 🙏\n\n\n"));
+
+  await this.write(new Uint8Array(bytes));
+}
 
 
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { getChanceSheetReport } from "../api/kotService";
+import { printerService } from "../services/printerService";
 
 type ApiBill = {
   BillNo: string;
@@ -36,6 +37,30 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     const year = d.getFullYear();
     return `${month}/${day}/${year}`;
   };
+const handlePrint = async () => {
+  try {
+    await printerService.autoReconnect();
+
+    await printerService.printSalesReport({
+      outletName: selectedOutlet?.name ?? "",
+      fromDate: startDate,
+      toDate: endDate,
+      bills: bills.map((b) => ({
+        BillNo: b.BillNo,
+        Grand: b.Grand,
+      })),
+      totals: {
+        gst: gstAmount,
+        cash: totalsByMethod.Cash,
+        card: totalsByMethod.Card,
+        online: totalsByMethod.Online,
+        total: totalNetAmount,
+      },
+    });
+  } catch (err) {
+    alert("Printer not connected");
+  }
+};
 
   // 🔹 Fetch API whenever date or outlet changes
   useEffect(() => {
@@ -205,6 +230,13 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
           </div>
         </div>
       </div>
+      <button
+  onClick={handlePrint}
+  className="px-4 py-2 bg-blue-600 text-white rounded text-xs"
+>
+  Print Report
+</button>
+
     </div>
   );
 };

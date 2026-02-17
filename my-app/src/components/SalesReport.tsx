@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { getChanceSheetReport } from "../api/kotService";
 import { printerService } from "../services/printerService";
+import PrinterSelector from "./PrinterSelector";
 
 type ApiBill = {
   BillNo: string;
@@ -19,6 +20,8 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const [bills, setBills] = useState<ApiBill[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [printerConnected, setPrinterConnected] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   // ✅ Date States
   const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
@@ -37,30 +40,33 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     const year = d.getFullYear();
     return `${month}/${day}/${year}`;
   };
-const handlePrint = async () => {
-  try {
-    await printerService.autoReconnect();
+  const handlePrint = async () => {
+    try {
+      setPrinting(true);
 
-    await printerService.printSalesReport({
-      outletName: selectedOutlet?.name ?? "",
-      fromDate: startDate,
-      toDate: endDate,
-      bills: bills.map((b) => ({
-        BillNo: b.BillNo,
-        Grand: b.Grand,
-      })),
-      totals: {
-        gst: gstAmount,
-        cash: totalsByMethod.Cash,
-        card: totalsByMethod.Card,
-        online: totalsByMethod.Online,
-        total: totalNetAmount,
-      },
-    });
-  } catch (err) {
-    alert("Printer not connected");
-  }
-};
+      await printerService.printSalesReport({
+        outletName: selectedOutlet?.name ?? "",
+        fromDate: startDate,
+        toDate: endDate,
+        bills: bills.map((b) => ({
+          BillNo: b.BillNo,
+          Grand: b.Grand,
+        })),
+        totals: {
+          gst: gstAmount,
+          cash: totalsByMethod.Cash,
+          card: totalsByMethod.Card,
+          online: totalsByMethod.Online,
+          total: totalNetAmount,
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error printing report");
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   // 🔹 Fetch API whenever date or outlet changes
   useEffect(() => {
@@ -72,7 +78,7 @@ const handlePrint = async () => {
         const data = await getChanceSheetReport(
           formatDate(startDate),
           formatDate(endDate),
-          selectedOutlet.id
+          selectedOutlet.id,
         );
         setBills(data || []);
       } catch (err) {
@@ -88,12 +94,12 @@ const handlePrint = async () => {
   /* ================= CALCULATIONS ================= */
   const totalNetAmount = useMemo(
     () => bills.reduce((sum, b) => sum + (b.Grand || 0), 0),
-    [bills]
+    [bills],
   );
 
   const gstAmount = useMemo(
     () => bills.reduce((sum, b) => sum + (b.Tax || 0), 0),
-    [bills]
+    [bills],
   );
 
   const totalsByMethod = useMemo(() => {
@@ -110,9 +116,8 @@ const handlePrint = async () => {
     return {
       Cash: bills.filter((b) => b.Cash > 0).length,
       Card: bills.filter((b) => b.Card > 0).length,
-      Online: bills.filter(
-        (b) => (b.Cash || 0) === 0 && (b.Card || 0) === 0
-      ).length,
+      Online: bills.filter((b) => (b.Cash || 0) === 0 && (b.Card || 0) === 0)
+        .length,
     };
   }, [bills]);
 
@@ -230,13 +235,19 @@ const handlePrint = async () => {
           </div>
         </div>
       </div>
-      <button
-  onClick={handlePrint}
-  className="px-4 py-2 bg-blue-600 text-white rounded text-xs"
->
-  Print Report
-</button>
-
+      <div className="mt-4 space-y-3">
+        {!printerConnected ? (
+          <PrinterSelector onConnected={() => setPrinterConnected(true)} />
+        ) : (
+          <button
+            disabled={printing}
+            onClick={handlePrint}
+            className="w-full bg-blue-600 text-white py-2 rounded text-sm"
+          >
+            {printing ? "Printing..." : "Print Report 🖨️"}
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -108,6 +108,24 @@ export const getonlineTypes = async (): Promise<any> => {
   return response.data;
 };
 
+export const getChanceSheetReport = async (
+  fromdate: string,
+  todate: string,
+  outlet: number
+): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/pos/reports/Chancesheet",
+    {
+      params: {
+        fromdate,
+        todate,
+        outlet,
+      },
+    }
+  );
+
+  return response.data;
+};
 
 
 export const submitBill = async (bill: any): Promise<any> => {

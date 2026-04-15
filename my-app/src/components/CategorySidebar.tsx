@@ -1,4 +1,4 @@
-import { Power, ShoppingBag, ChevronDown, BarChart2 } from "lucide-react";
+import { Power, ShoppingBag, ChevronDown, BarChart2, Package } from "lucide-react";
 import { FALLBACK_IMAGE, type Category } from "../utils";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
@@ -24,7 +24,12 @@ export default function CategorySidebar({
   const handleSalesReport = () => {
     navigate("/sales-report");
     setDropdownOpen(false);
+  }
+   const handleItemSalesReport = () => {
+    navigate("/item-sales-report");
+    setDropdownOpen(false);
   };
+  
 
   return (
     <>
@@ -86,6 +91,12 @@ export default function CategorySidebar({
               >
                 <BarChart2 size={16} /> Sales Report
               </button>
+                <button
+    onClick={handleItemSalesReport} // create this function
+    className="flex items-center gap-2 w-full px-3 py-2 hover:bg-green-600 text-white"
+  >
+    <Package size={16} /> Item Sales Report
+  </button>
               <button
                 onClick={logout}
                 className="flex items-center gap-2 w-full px-3 py-2 hover:bg-red-600 text-white rounded-b-lg"

@@ -17,6 +17,7 @@ import { useOutlet } from "../context/OutletContext";
 import { useCompany } from "../context/CompanyContext";
 import { retryRequest } from "../components/retryRequest";
 import SalesReport from "../components/SalesReport";
+import ItemSalesReport from "../components/ItemSalesReport";
 
 export default function LandingPage() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
@@ -110,12 +111,14 @@ const navi = useNavigate()
 
     fetchItems();
   }, [activeCategory]);
-const isLogin = location.pathname === "/" || location.pathname === "/cart"|| location.pathname === "/sales-report";
+const isLogin = location.pathname === "/" || location.pathname === "/cart"|| location.pathname === "/sales-report"|| location.pathname === "/item-sales-report";
   return (
     <CartProvider>
       <div className="min-h-screen flex bg-gray-100">
         {location.pathname !== "/cart" &&
         location.pathname !== "/sales-report" &&
+        location.pathname !== "/item-sales-report" &&
+
           location.pathname !== "/" &&
           activeCategory !== null && (
             <CategorySidebar
@@ -155,6 +158,10 @@ const isLogin = location.pathname === "/" || location.pathname === "/cart"|| loc
               <Route 
     path="/sales-report" 
     element={<SalesReport onBack={()=>navi("/itemsPage")} />} 
+  />
+              <Route 
+    path="/item-sales-report" 
+    element={<ItemSalesReport onBack={()=>navi("/itemsPage")} />} 
   />
           </Routes>
         </main>

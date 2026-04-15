@@ -128,6 +128,25 @@ export const getChanceSheetReport = async (
 };
 
 
+
+export const getItemSalesReport = async (
+  fromdate: string,
+  todate: string,
+): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/pos/reports/itemsales",
+    {
+      params: {
+        fromdate,
+        todate,
+      },
+    }
+  );
+
+  return response.data;
+};
+
+
 export const submitBill = async (bill: any): Promise<any> => {
   const response = await axiosInstance.post(
     "/api/kot/submitOrderdirectbillnew",

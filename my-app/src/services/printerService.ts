@@ -399,6 +399,78 @@ async printSalesReport(params: {
   await this.write(new Uint8Array(bytes));
 }
 
+async printItemSalesReport(params: {
+  outletName: string;
+  fromDate: string;
+  toDate: string;
+  items: {
+    ItemName: string;
+    Rate: number;
+    Qty: number;
+    Total: number;
+  }[];
+}) {
+  const ESC = 0x1b;
+  const WIDTH = 32;
+  const bytes: number[] = [];
+
+  const enc = (t: string) =>
+    Array.from(new TextEncoder().encode(t));
+
+  const line = "-".repeat(WIDTH);
+
+  const center = (t: string) =>
+    t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
+
+  /* ================= HEADER ================= */
+  bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
+  bytes.push(...enc(center("ITEM SALES REPORT") + "\n"));
+  bytes.push(ESC, 0x45, 0x00);
+
+  bytes.push(...enc(center(`Outlet: ${params.outletName}`) + "\n"));
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= DATE ================= */
+  bytes.push(ESC, 0x61, 0x00);
+  bytes.push(...enc(`From : ${params.fromDate}\n`));
+  bytes.push(...enc(`To   : ${params.toDate}\n`));
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= HEADER ROW ================= */
+  bytes.push(...enc("ITEM        QTY   RATE   AMT\n"));
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= ITEMS ================= */
+  params.items.forEach((item) => {
+    const name = item.ItemName.replace("\n", " ")
+      .slice(0, 12)
+      .padEnd(12);
+
+    const qty = String(item.Qty).padStart(3);
+    const rate = item.Rate.toFixed(2).padStart(7);
+    const total = item.Total.toFixed(2).padStart(7);
+
+    bytes.push(...enc(`${name} ${qty} ${rate} ${total}\n`));
+  });
+
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= GRAND TOTAL ================= */
+  const grandTotal = params.items.reduce(
+    (sum, i) => sum + i.Total,
+    0
+  );
+
+  bytes.push(ESC, 0x45, 0x01);
+  bytes.push(
+    ...enc(center(`TOTAL : Rs ${grandTotal.toFixed(2)}`) + "\n")
+  );
+  bytes.push(ESC, 0x45, 0x00);
+
+  bytes.push(...enc("\nThank You 🙏\n\n\n"));
+
+  await this.write(new Uint8Array(bytes));
+}
 
 
 

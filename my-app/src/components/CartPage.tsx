@@ -38,8 +38,6 @@ const CartPage = () => {
   const [paymentMode, setPaymentMode] = useState<"CASH" | "CARD" | "ONLINE">(
     "CASH",
   );
-  const [cardTypes, setCardTypes] = useState<any[]>([]);
-  const [selectedCard, setSelectedCard] = useState<any>(null);
 
   const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
@@ -53,7 +51,6 @@ const CartPage = () => {
         console.log("Cards 👉", cardRes);
         console.log("Online 👉", onlineRes);
 
-        setCardTypes(Array.isArray(cardRes) ? cardRes : cardRes?.data || []);
         setOnlineTypes(
           Array.isArray(onlineRes) ? onlineRes : onlineRes?.data || [],
         );
@@ -203,11 +200,7 @@ const CartPage = () => {
         message: "COMPLETED",
         data: {
           transactionId:
-            paymentMode === "CARD"
-              ? selectedCard.CardType
-              : paymentMode === "ONLINE"
-                ? selectedOnline.CardType
-                : "CASH",
+            paymentMode === "ONLINE" ? selectedOnline.CardType : "CASH",
 
           amount: Number(tax?.GrandTotal ?? totalAmount),
           merchantId: transactionId,
@@ -343,7 +336,7 @@ const CartPage = () => {
 
                 {/* Main Modes */}
                 <div className="grid grid-cols-3 gap-2">
-                  {["CASH", "CARD", "ONLINE"].map((mode) => (
+                  {["CASH", "ONLINE"].map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setPaymentMode(mode as any)}
@@ -358,32 +351,6 @@ const CartPage = () => {
                     </button>
                   ))}
                 </div>
-
-                {/* CARD OPTIONS (From API) */}
-                {paymentMode === "CARD" && (
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {cardTypes.length === 0 ? (
-                      <p className="text-sm text-gray-500">
-                        Loading card types...
-                      </p>
-                    ) : (
-                      cardTypes.map((card) => (
-                        <button
-                          key={card.CardId}
-                          onClick={() => setSelectedCard(card)}
-                          className={`py-2 rounded-lg border text-sm transition 
-              ${
-                selectedCard?.CardId === card.CardId
-                  ? "bg-green-600 text-white border-green-600"
-                  : "bg-white"
-              }`}
-                        >
-                          {card.CardType}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
 
                 {/* ONLINE OPTIONS (From API) */}
                 {paymentMode === "ONLINE" && (
@@ -469,7 +436,6 @@ const CartPage = () => {
                   )}
 
                   {/* Sales Report Button (Always Visible) */}
-            
                 </div>
               </div>
             </div>

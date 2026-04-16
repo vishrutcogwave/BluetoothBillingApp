@@ -16,10 +16,12 @@ import {
 } from "../api/kotService";
 import { useCompany } from "../context/CompanyContext";
 import SalesReport from "./SalesReport";
+import { QRCodeCanvas } from "qrcode.react";
 
 /* =========================
    TAX CALCULATION
    ========================= */
+   
 
 const CartPage = () => {
   const { items, total, dispatch } = useCart();
@@ -41,6 +43,36 @@ const CartPage = () => {
 
   const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
+  const [billData, setBillData] = useState<any>(null);
+
+
+  const generateUPIUrl = () => {
+  const upiId = selectedOnline?.CardType || "test@upi";
+  const name = "POS Payment";
+
+  const amount = (billData?.GrandTotal ?? total).toFixed(2);
+
+  return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
+    name
+  )}&am=${amount}&cu=INR`;
+};
+  useEffect(() => {
+    const fetchBill = async () => {
+      try {
+        if (items.length === 0) return;
+
+        const payload = createBillPayload();
+        const res = await getBill(payload);
+
+        console.log("Bill 👉", res);
+        setBillData(res); // ✅ store response
+      } catch (error) {
+        console.error("Error fetching bill:", error);
+      }
+    };
+
+    fetchBill();
+  }, [items]);
 
   useEffect(() => {
     const fetchPaymentTypes = async () => {
@@ -243,7 +275,11 @@ const CartPage = () => {
       setLoading(false);
     }
   };
-
+useEffect(() => {
+  if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
+    setSelectedOnline(onlineTypes[0]);
+  }
+}, [paymentMode, onlineTypes]);
   return (
     <>
       {activePage === "sales" ? (
@@ -335,7 +371,7 @@ const CartPage = () => {
                 <h3 className="font-medium mb-2">Payment Mode</h3>
 
                 {/* Main Modes */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {["CASH", "ONLINE"].map((mode) => (
                     <button
                       key={mode}
@@ -353,7 +389,7 @@ const CartPage = () => {
                 </div>
 
                 {/* ONLINE OPTIONS (From API) */}
-                {paymentMode === "ONLINE" && (
+                {/* {paymentMode === "ONLINE" && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {onlineTypes.length === 0 ? (
                       <p className="text-sm text-gray-500">
@@ -376,43 +412,91 @@ const CartPage = () => {
                       ))
                     )}
                   </div>
-                )}
+                )} */}
+
+                {paymentMode === "ONLINE" && selectedOnline && (
+  <div className="mt-6 flex flex-col items-center justify-center w-full">
+    
+    <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
+      Scan & Pay
+    </p>
+
+    {/* QR BOX */}
+    <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
+      <QRCodeCanvas
+        value={generateUPIUrl()}
+        size={
+          window.innerWidth < 640
+            ? 160   // 📱 mobile
+            : window.innerWidth < 1024
+            ? 220   // 💻 tablet
+            : 280   // 🖥️ kiosk
+        }
+        bgColor="#ffffff"
+        fgColor="#000000"
+        level="H"
+        includeMargin
+      />
+    </div>
+
+    {/* Amount */}
+    <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
+      ₹{(billData?.GrandTotal ?? total).toFixed(2)}
+    </p>
+
+    <p className="text-xs text-gray-400 text-center">
+      Scan using any UPI app
+    </p>
+  </div>
+)}
               </div>
 
               {/* SUMMARY + PRINTER */}
               <div className="w-full max-w-md bg-gray-50 rounded-2xl p-6 shadow">
                 <h2 className="font-semibold text-xl mb-4">Order Summary</h2>
 
+                {/* Subtotal */}
                 <div className="flex justify-between mb-2">
                   <span>Subtotal</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <span>₹{(billData?.TotalAmount ?? total).toFixed(2)}</span>
                 </div>
 
-                {/* {!printerConnected ? (
-              <PrinterSelector onConnected={() => setPrinterConnected(true)} />
-            ) : (
-                <button
-                  disabled={loading}
-                  onClick={handlePrintBill}
-                  className="mt-6 w-full text-white font-semibold py-3 rounded-xl"
-                  style={{ backgroundColor: mainBlue }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.backgroundColor = hoverBlue)
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.backgroundColor = mainBlue)
-                  }
-                >
-                  {loading ? "Processing..." : "Submit & Print 🧾"}
-                </button>
-                )} 
+                {/* Taxes */}
+                {billData?.TaxList?.map((tax: any, index: number) => (
+                  <div
+                    key={index}
+                    className="flex justify-between text-sm text-gray-600"
+                  >
+                    <span>{tax.TaxName}</span>
+                    <span>₹{tax.TaxAmount.toFixed(2)}</span>
+                  </div>
+                ))}
 
-                <button
-                  onClick={() => setActivePage("sales")}
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                >
-                  Sales Report
-                </button> */}
+                {/* Service Charge */}
+                {(billData?.ServiceCharge ?? 0) > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Service Charge</span>
+                    <span>₹{billData.ServiceCharge.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Discount */}
+                {(billData?.Discount ?? 0) > 0 && (
+                  <div className="flex justify-between text-sm text-red-500">
+                    <span>Discount</span>
+                    <span>-₹{billData.Discount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <hr className="my-3" />
+
+                {/* Grand Total */}
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Grand Total</span>
+                  <span>₹{(billData?.GrandTotal ?? total).toFixed(2)}</span>
+                </div>
+
+                {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
                   {!printerConnected ? (
                     <PrinterSelector
@@ -434,8 +518,6 @@ const CartPage = () => {
                       {loading ? "Processing..." : "Submit & Print 🧾"}
                     </button>
                   )}
-
-                  {/* Sales Report Button (Always Visible) */}
                 </div>
               </div>
             </div>

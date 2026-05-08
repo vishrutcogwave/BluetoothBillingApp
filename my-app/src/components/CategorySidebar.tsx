@@ -1,22 +1,43 @@
-import { Power, ShoppingBag, ChevronDown, BarChart2, Package } from "lucide-react";
+import {
+  Power,
+  ShoppingBag,
+  ChevronDown,
+  BarChart2,
+  Package,
+} from "lucide-react";
+
 import { FALLBACK_IMAGE, type Category } from "../utils";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+interface OutletItem {
+  id: number;
+  name: string;
+}
+
 interface CategorySidebarProps {
   active: number;
   onSelect: (id: number) => void;
   categories: Category[];
+
+  outlets: OutletItem[];
+  activeOutlet: number | null;
+  onSelectOutlet: (id: number) => void;
 }
 
 export default function CategorySidebar({
   active,
   onSelect,
   categories,
+  outlets,
+  activeOutlet,
+  onSelectOutlet,
 }: CategorySidebarProps) {
   const { logout } = useAuth();
+
   const navigate = useNavigate();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
@@ -24,111 +45,237 @@ export default function CategorySidebar({
   const handleSalesReport = () => {
     navigate("/sales-report");
     setDropdownOpen(false);
-  }
-   const handleItemSalesReport = () => {
+  };
+
+  const handleItemSalesReport = () => {
     navigate("/item-sales-report");
     setDropdownOpen(false);
   };
-  
 
   return (
     <>
-      {/* ================= MOBILE TOP BAR ================= */}
-      <aside className="fixed top-0 left-0 right-0 h-20 bg-[#0B1220] text-white md:hidden z-50 flex items-center px-2">
-        {/* Scrollable categories */}
-        <div className="flex items-center gap-3 flex-nowrap overflow-x-auto flex-1">
-          {categories.map((cat) => {
-            const isActive = active === cat.id;
+      {/* ================= MOBILE ================= */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#0B1220]">
+        
+        {/* OUTLETS */}
+        <div className="flex gap-2 overflow-x-auto px-3 pt-3 pb-2 scrollbar-hide">
+          {outlets.map((outlet) => {
+            const isActive = activeOutlet === outlet.id;
+
             return (
               <button
-                key={cat.id}
-                onClick={() => onSelect(cat.id)}
+                key={outlet.id}
+                onClick={() => onSelectOutlet(outlet.id)}
                 className={`
-                  flex flex-col items-center justify-center
-                  w-[140px] h-[70px]
-                  rounded-xl border-2
-                  transition-colors duration-300 ease-in-out
-                  flex-shrink-0
-                  ${isActive ? "bg-[#0576B2] border-blue-700" : "bg-white/5 border-transparent"}
+                  px-4 py-2 rounded-xl text-sm whitespace-nowrap transition flex-shrink-0
+                  ${
+                    isActive
+                      ? "bg-[#0576B2] text-white"
+                      : "bg-white/10 text-white"
+                  }
                 `}
-                type="button"
               >
-                <img
-                  src={cat.image || FALLBACK_IMAGE}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = FALLBACK_IMAGE;
-                  }}
-                  className="w-12 h-12 rounded-full object-cover"
-                  alt={cat.name}
-                />
-                <span
-                  className="text-[13px] font-semibold text-center whitespace-nowrap overflow-hidden text-ellipsis w-full"
-                  title={cat.name}
-                >
-                  {cat.name}
-                </span>
+                {outlet.name}
               </button>
             );
           })}
         </div>
 
-        {/* Dropdown arrow */}
-        <div className="relative">
-          <button
-            onClick={toggleDropdown}
-            className="flex flex-col justify-center items-center p-2 bg-gray-700 rounded-xl hover:bg-gray-600"
-          >
-            <ChevronDown size={16} strokeWidth={2} className="text-white" />
-          </button>
+        {/* CATEGORIES */}
+        <div className="flex items-center px-2 pb-3">
+          <div className="flex items-center gap-3 overflow-x-auto flex-1 scrollbar-hide">
+            {categories.map((cat) => {
+              const isActive = active === cat.id;
 
-          {/* Dropdown menu */}
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-36 bg-[#0B1220] border border-gray-600 rounded-lg shadow-lg z-50 flex flex-col">
-              <button
-                onClick={handleSalesReport}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-blue-600 text-white rounded-t-lg"
-              >
-                <BarChart2 size={16} /> Sales Report
-              </button>
+              return (
                 <button
-    onClick={handleItemSalesReport} // create this function
-    className="flex items-center gap-2 w-full px-3 py-2 hover:bg-green-600 text-white"
-  >
-    <Package size={16} /> Item Sales Report
-  </button>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-red-600 text-white rounded-b-lg"
+                  key={cat.id}
+                  onClick={() => onSelect(cat.id)}
+                  className={`
+                    flex flex-col items-center justify-center
+                    w-[120px]
+                    h-[74px]
+                    rounded-xl
+                    border
+                    transition-all duration-200
+                    flex-shrink-0
+                    px-2
+                    ${
+                      isActive
+                        ? "bg-[#0576B2] border-blue-700"
+                        : "bg-white/5 border-transparent"
+                    }
+                  `}
+                  type="button"
+                >
+                  <img
+                    src={cat.image || FALLBACK_IMAGE}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = FALLBACK_IMAGE;
+                    }}
+                    className="w-10 h-10 rounded-full object-cover"
+                    alt={cat.name}
+                  />
+
+                  <span
+                    className="
+                      text-[12px]
+                      font-semibold
+                      text-center
+                      truncate
+                      w-full
+                      mt-1
+                      text-white
+                    "
+                  >
+                    {cat.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* DROPDOWN */}
+          <div className="relative ml-2">
+            <button
+              onClick={toggleDropdown}
+              className="
+                flex items-center justify-center
+                w-10 h-10
+                bg-gray-700
+                rounded-xl
+                hover:bg-gray-600
+              "
+            >
+              <ChevronDown
+                size={16}
+                strokeWidth={2}
+                className="text-white"
+              />
+            </button>
+
+            {dropdownOpen && (
+              <div
+                className="
+                  absolute right-0 mt-2 w-44
+                  bg-[#0B1220]
+                  border border-gray-600
+                  rounded-lg
+                  shadow-lg
+                  z-50
+                  overflow-hidden
+                "
               >
-                <Power size={16} /> Logout
-              </button>
-            </div>
-          )}
+                <button
+                  onClick={handleSalesReport}
+                  className="
+                    flex items-center gap-2
+                    w-full px-3 py-3
+                    hover:bg-blue-600
+                    text-white text-sm
+                  "
+                >
+                  <BarChart2 size={16} />
+                  Sales Report
+                </button>
+
+                <button
+                  onClick={handleItemSalesReport}
+                  className="
+                    flex items-center gap-2
+                    w-full px-3 py-3
+                    hover:bg-green-600
+                    text-white text-sm
+                  "
+                >
+                  <Package size={16} />
+                  Item Sales Report
+                </button>
+
+                <button
+                  onClick={logout}
+                  className="
+                    flex items-center gap-2
+                    w-full px-3 py-3
+                    hover:bg-red-600
+                    text-white text-sm
+                  "
+                >
+                  <Power size={16} />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </aside>
+      </div>
 
-      {/* Spacer to prevent overlap */}
-      <div className="h-20 md:hidden" />
-      <div className="h-[164px] md:hidden" />
-      <div className="h-20 md:hidden" />
-
-      {/* ================= DESKTOP SIDEBAR (UNCHANGED) ================= */}
-      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 w-64 bg-[#0B1220] text-white flex-col p-3 overflow-y-auto z-40">
+      {/* ================= DESKTOP ================= */}
+      <aside
+        className="
+          hidden md:flex
+          fixed
+          top-0
+          left-0
+          bottom-0
+          w-64
+          bg-[#0B1220]
+          text-white
+          flex-col
+          p-3
+          overflow-y-auto
+          z-40
+        "
+      >
         <h2 className="flex items-center gap-2 text-lg font-semibold mb-5">
-          <ShoppingBag size={20} /> Kiosk Order
+          <ShoppingBag size={20} />
+          Kiosk Order
         </h2>
 
+        {/* OUTLETS */}
+        <div className="space-y-2 mb-5">
+          {outlets.map((outlet) => {
+            const isActive = activeOutlet === outlet.id;
+
+            return (
+              <button
+                key={outlet.id}
+                onClick={() => onSelectOutlet(outlet.id)}
+                className={`
+                  w-full p-2 rounded-lg text-sm text-left transition
+                  ${
+                    isActive
+                      ? "bg-[#0576B2]"
+                      : "bg-white/5 hover:bg-white/10"
+                  }
+                `}
+              >
+                {outlet.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* CATEGORIES */}
         <div className="space-y-3">
           {categories.map((cat) => {
             const isActive = active === cat.id;
+
             return (
               <button
                 key={cat.id}
                 onClick={() => onSelect(cat.id)}
                 className={`
-                  flex items-center gap-3 p-3 w-full rounded-xl transition
-                  ${isActive ? "bg-[#0576B2]" : "bg-white/5 hover:bg-white/10"}
+                  flex items-center gap-3
+                  p-3 w-full
+                  rounded-xl
+                  transition
+                  ${
+                    isActive
+                      ? "bg-[#0576B2]"
+                      : "bg-white/5 hover:bg-white/10"
+                  }
                 `}
               >
                 <img
@@ -140,12 +287,16 @@ export default function CategorySidebar({
                   className="w-10 h-10 rounded-full object-cover"
                   alt={cat.name}
                 />
-                <span className="text-sm font-semibold">{cat.name}</span>
+
+                <span className="text-sm font-semibold">
+                  {cat.name}
+                </span>
               </button>
             );
           })}
         </div>
       </aside>
+
       <div className="hidden md:block w-64 flex-shrink-0" />
     </>
   );

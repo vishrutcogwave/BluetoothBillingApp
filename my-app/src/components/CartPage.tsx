@@ -21,7 +21,6 @@ import { QRCodeCanvas } from "qrcode.react";
 /* =========================
    TAX CALCULATION
    ========================= */
-   
 
 const CartPage = () => {
   const { items, total, dispatch } = useCart();
@@ -45,17 +44,16 @@ const CartPage = () => {
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
   const [billData, setBillData] = useState<any>(null);
 
-
   const generateUPIUrl = () => {
-  const upiId = selectedOnline?.CardType || "test@upi";
-  const name = "POS Payment";
+    const upiId = selectedOnline?.CardType || "test@upi";
+    const name = "POS Payment";
 
-  const amount = (billData?.GrandTotal ?? total).toFixed(2);
+    const amount = (billData?.GrandTotal ?? total).toFixed(2);
 
-  return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
-    name
-  )}&am=${amount}&cu=INR`;
-};
+    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
+      name,
+    )}&am=${amount}&cu=INR`;
+  };
   useEffect(() => {
     const fetchBill = async () => {
       try {
@@ -275,11 +273,11 @@ const CartPage = () => {
       setLoading(false);
     }
   };
-useEffect(() => {
-  if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
-    setSelectedOnline(onlineTypes[0]);
-  }
-}, [paymentMode, onlineTypes]);
+  useEffect(() => {
+    if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
+      setSelectedOnline(onlineTypes[0]);
+    }
+  }, [paymentMode, onlineTypes]);
   return (
     <>
       {activePage === "sales" ? (
@@ -415,40 +413,39 @@ useEffect(() => {
                 )} */}
 
                 {paymentMode === "ONLINE" && selectedOnline && (
-  <div className="mt-6 flex flex-col items-center justify-center w-full">
-    
-    <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
-      Scan & Pay
-    </p>
+                  <div className="mt-6 flex flex-col items-center justify-center w-full">
+                    <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
+                      Scan & Pay
+                    </p>
 
-    {/* QR BOX */}
-    <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
-      <QRCodeCanvas
-        value={generateUPIUrl()}
-        size={
-          window.innerWidth < 640
-            ? 160   // 📱 mobile
-            : window.innerWidth < 1024
-            ? 220   // 💻 tablet
-            : 280   // 🖥️ kiosk
-        }
-        bgColor="#ffffff"
-        fgColor="#000000"
-        level="H"
-        includeMargin
-      />
-    </div>
+                    {/* QR BOX */}
+                    <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
+                      <QRCodeCanvas
+                        value={generateUPIUrl()}
+                        size={
+                          window.innerWidth < 640
+                            ? 160 // 📱 mobile
+                            : window.innerWidth < 1024
+                              ? 220 // 💻 tablet
+                              : 280 // 🖥️ kiosk
+                        }
+                        bgColor="#ffffff"
+                        fgColor="#000000"
+                        level="H"
+                        includeMargin
+                      />
+                    </div>
 
-    {/* Amount */}
-    <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
-      ₹{(billData?.GrandTotal ?? total).toFixed(2)}
-    </p>
+                    {/* Amount */}
+                    <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
+                      ₹{(billData?.GrandTotal ?? total).toFixed(2)}
+                    </p>
 
-    <p className="text-xs text-gray-400 text-center">
-      Scan using any UPI app
-    </p>
-  </div>
-)}
+                    <p className="text-xs text-gray-400 text-center">
+                      Scan using any UPI app
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* SUMMARY + PRINTER */}
@@ -504,16 +501,27 @@ useEffect(() => {
                     />
                   ) : (
                     <button
-                      disabled={loading}
+                      disabled={loading || paymentMode === "ONLINE"}
                       onClick={handlePrintBill}
-                      className="w-full text-white font-semibold py-3 rounded-xl transition"
-                      style={{ backgroundColor: mainBlue }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.backgroundColor = hoverBlue)
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.backgroundColor = mainBlue)
-                      }
+                      className={`w-full text-white font-semibold py-3 rounded-xl transition ${
+                        paymentMode === "ONLINE"
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : ""
+                      }`}
+                      style={{
+                        backgroundColor:
+                          paymentMode === "ONLINE" ? "#9CA3AF" : mainBlue,
+                      }}
+                      onMouseOver={(e) => {
+                        if (paymentMode !== "ONLINE") {
+                          e.currentTarget.style.backgroundColor = hoverBlue;
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (paymentMode !== "ONLINE") {
+                          e.currentTarget.style.backgroundColor = mainBlue;
+                        }
+                      }}
                     >
                       {loading ? "Processing..." : "Submit & Print 🧾"}
                     </button>

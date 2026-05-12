@@ -24,6 +24,7 @@ import { retryRequest } from "../components/retryRequest";
 
 import SalesReport from "../components/SalesReport";
 import ItemSalesReport from "../components/ItemSalesReport";
+import { useOutlet } from "../context/OutletContext";
 
 interface OutletItem {
   id: number;
@@ -50,6 +51,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const { companyInfo, dispatch } = useCompany();
+  const {  dispatch: outletDispatch } = useOutlet();
 
   // ================= FETCH OUTLETS =================
 const fetchOutlets = async () => {
@@ -67,8 +69,32 @@ const fetchOutlets = async () => {
 
     setOutlets(mapped);
 
-    if (mapped.length > 0) {
+    // ✅ Restore saved outlet
+    const savedOutlet =
+      localStorage.getItem("selectedOutlet");
+
+    if (savedOutlet) {
+      const parsed = JSON.parse(savedOutlet);
+
+      setActiveOutlet(parsed.id);
+
+      outletDispatch({
+        type: "SET_OUTLET",
+        payload: parsed,
+      });
+    } else if (mapped.length > 0) {
+      // ✅ Default first outlet
       setActiveOutlet(mapped[0].id);
+
+      outletDispatch({
+        type: "SET_OUTLET",
+        payload: mapped[0],
+      });
+
+      localStorage.setItem(
+        "selectedOutlet",
+        JSON.stringify(mapped[0])
+      );
     }
   } catch (err) {
     console.error("Outlet fetch failed", err);
@@ -183,7 +209,25 @@ const fetchOutlets = async () => {
               categories={categories}
               outlets={outlets}
               activeOutlet={activeOutlet}
-              onSelectOutlet={setActiveOutlet}
+              onSelectOutlet={(outletId) => {
+  setActiveOutlet(outletId);
+
+  const outlet = outlets.find(
+    (o) => o.id === outletId
+  );
+
+  if (outlet) {
+    outletDispatch({
+      type: "SET_OUTLET",
+      payload: outlet,
+    });
+
+    localStorage.setItem(
+      "selectedOutlet",
+      JSON.stringify(outlet)
+    );
+  }
+}}
             />
           )}
 

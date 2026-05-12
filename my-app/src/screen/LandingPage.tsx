@@ -6,7 +6,7 @@ import {
   getcompanyinfobill,
   getFoodCategories,
   getFoodsImage,
-  getOutlets,
+  getOutletsForUser,
   type FoodItem,
 } from "../api/kotService";
 
@@ -52,25 +52,28 @@ export default function LandingPage() {
   const { companyInfo, dispatch } = useCompany();
 
   // ================= FETCH OUTLETS =================
-  const fetchOutlets = async () => {
-    try {
-      const data = await retryRequest(() => getOutlets());
+const fetchOutlets = async () => {
+  try {
+    const username = localStorage.getItem("username") || "";
 
-      const mapped = data.map((out: any) => ({
-        id: out.OltCode,
-        name: out.OltName,
-      }));
+    const data = await retryRequest(() =>
+      getOutletsForUser(username)
+    );
 
-      setOutlets(mapped);
+    const mapped = data.map((out: any) => ({
+      id: out.OltCode,
+      name: out.OltName,
+    }));
 
-      if (mapped.length > 0) {
-        setActiveOutlet(mapped[0].id);
-      }
-    } catch (err) {
-      console.error("Outlet fetch failed", err);
+    setOutlets(mapped);
+
+    if (mapped.length > 0) {
+      setActiveOutlet(mapped[0].id);
     }
-  };
-
+  } catch (err) {
+    console.error("Outlet fetch failed", err);
+  }
+};
   // ================= FETCH COMPANY =================
   const fetchCompanyInfo = async () => {
     try {

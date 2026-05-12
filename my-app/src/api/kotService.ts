@@ -204,3 +204,17 @@ export const checkPaymentStatus = async (transno: string): Promise<any> => {
   });
   return response.data;
 };
+export const getOutletsForUser = async (
+  username: string
+): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/kot/getoutletsforuser",
+    {
+      params: {
+        username,
+      },
+    }
+  );
+
+  return response.data;
+};

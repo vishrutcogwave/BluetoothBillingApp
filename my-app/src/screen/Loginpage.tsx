@@ -128,9 +128,13 @@ const LoginPage = () => {
 
     try {
       setLoading(true);
-      const result = await login(username, password);
-      console.log("Login successful:", result);
-      navigate("/itemsPage");
+ const result = await login(username, password);
+
+localStorage.setItem("username", username);
+
+console.log("Login successful:", result);
+
+navigate("/itemsPage");
     } catch (error) {
       console.error("Login failed:", error);
       setErrorMessage("Invalid username or password");

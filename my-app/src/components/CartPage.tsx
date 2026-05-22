@@ -141,7 +141,7 @@ const startPaymentStatusPolling = (
         res?.success === true &&
         (
       
-          res?.code === "SUCCESS"
+          res?.code === "PAYMENT_SUCCESS"
         )
       ) {
         clearInterval(interval);

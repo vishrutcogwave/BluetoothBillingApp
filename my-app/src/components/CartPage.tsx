@@ -117,13 +117,14 @@ const CartPage = () => {
   const createBillPayload = () => {
     const foodItems = mapCartToFoodPayload(items);
     console.log(companyInfo, "code");
+console.log("selectedOutlet",selectedOutlet);
 
     return {
       UserCode: 1,
       Table: "F",
       SubTable: "A",
-      Outlet: 7,
-      OutletName: "FASTFOOD",
+  Outlet: Number(selectedOutlet?.id || 0),
+OutletName: selectedOutlet?.name || "",
       Waiter: 1,
       WaiterName: "ZZ",
       Pax: 1,
@@ -170,9 +171,8 @@ const CartPage = () => {
         UserCode: Number(res?.UserCode ?? 1),
         Table: res?.Table ?? "F",
         SubTable: res?.SubTable ?? "A",
-
-        Outlet: Number(selectedOutlet?.id),
-        OutletName: res?.OutletName ?? "FAST FOOD",
+  Outlet: Number(selectedOutlet?.id || 0),
+OutletName: selectedOutlet?.name || "",
 
         Waiter: Number(res?.Waiter ?? 1),
         WaiterName: res?.WaiterName ?? "ZZ",
@@ -183,7 +183,7 @@ const CartPage = () => {
         Total: Number(totalAmount),
         TotQty: Number(totalQty),
 
-        Branch: res?.Branch ?? "DEROY",
+        Branch: companyInfo?.Branch_code || "",
         Type: res?.Type ?? "K",
 
         NCCode: Number(res?.NCCode ?? 0),
@@ -241,38 +241,87 @@ const CartPage = () => {
     };
   };
 
+  // const handlePrintBill = async () => {
+  //   debugger
+  //   try {
+  //     setLoading(true);
+  //     const transactionId = generateTransactionId(); // 🔥 generate here
+  //     const payload = createBillPayload();
+  //     const res = await getBill(payload);
+
+  //     const payload2 = buildSubmitPayloadFromRes(items, res, transactionId);
+
+  //     // ✅ use centralized API
+  //     const res2 = await submitBill(payload2);
+  //     const res3 = await getbillnouseorderid(transactionId);
+  //     console.log("res3", res3);
+
+  //     console.log("Backend Bill 👉", res2);
+
+  //     if (!res2.success) {
+  //       alert("Bill calculation failed");
+  //       return;
+  //     }
+
+  //     await printerService.printBill(items, res, companyInfo, res3.billdetails);
+
+  //     dispatch({ type: "CLEAR_CART" });
+  //     navigate("/itemsPage");
+  //   } catch (err) {
+  //     console.error("Submit/Print error:", err);
+  //     alert("❌ Error while submitting or printing bill");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handlePrintBill = async () => {
-    try {
-      setLoading(true);
-      const transactionId = generateTransactionId(); // 🔥 generate here
-      const payload = createBillPayload();
-      const res = await getBill(payload);
+  try {
+    setLoading(true);
 
-      const payload2 = buildSubmitPayloadFromRes(items, res, transactionId);
+    const transactionId = generateTransactionId();
 
-      // ✅ use centralized API
-      const res2 = await submitBill(payload2);
-      const res3 = await getbillnouseorderid(transactionId);
-      console.log("res3", res3);
+    const payload = createBillPayload();
+    const res = await getBill(payload);
 
-      console.log("Backend Bill 👉", res2);
+    const payload2 = buildSubmitPayloadFromRes(
+      items,
+      res,
+      transactionId
+    );
 
-      if (!res2.success) {
-        alert("Bill calculation failed");
-        return;
-      }
+    const res2 = await submitBill(payload2);
 
-      await printerService.printBill(items, res, companyInfo, res3.billdetails);
+    console.log("Backend Bill 👉", res2);
 
-      dispatch({ type: "CLEAR_CART" });
-      navigate("/itemsPage");
-    } catch (err) {
-      console.error("Submit/Print error:", err);
-      alert("❌ Error while submitting or printing bill");
-    } finally {
-      setLoading(false);
+    // ✅ stop printing if submit fails
+    if (!res2 || res2.success !== true) {
+      alert("Bill submission failed");
+      return;
     }
-  };
+
+    const res3 = await getbillnouseorderid(transactionId);
+
+    console.log("res3", res3);
+
+    await printerService.printBill(
+      items,
+      res,
+      companyInfo,
+      res3.billdetails
+    );
+
+    dispatch({ type: "CLEAR_CART" });
+
+    navigate("/itemsPage");
+
+  } catch (err) {
+    console.error("Submit/Print error:", err);
+    alert("❌ Error while submitting or printing bill");
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
       setSelectedOnline(onlineTypes[0]);

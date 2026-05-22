@@ -12,6 +12,7 @@ import {
   getbillnouseorderid,
   getCardTypes,
   getonlineTypes,
+  sendPaymentRequest,
   submitBill,
 } from "../api/kotService";
 import { useCompany } from "../context/CompanyContext";
@@ -43,17 +44,8 @@ const CartPage = () => {
   const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
   const [billData, setBillData] = useState<any>(null);
+const [paymentData, setPaymentData] = useState<any>(null);
 
-  const generateUPIUrl = () => {
-    const upiId = selectedOnline?.CardType || "test@upi";
-    const name = "POS Payment";
-
-    const amount = (billData?.GrandTotal ?? total).toFixed(2);
-
-    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
-      name,
-    )}&am=${amount}&cu=INR`;
-  };
   useEffect(() => {
     const fetchBill = async () => {
       try {
@@ -100,7 +92,28 @@ const CartPage = () => {
     const random = Math.floor(Math.random() * 100000); // 5 digit random
     return `TXN-${timestamp}-${random}`;
   };
+const fetchPaymentQR = async () => {
+  try {
+    const transactionId = generateTransactionId();
 
+  const amount = Math.round(
+  (billData?.GrandTotal ?? total) * 100
+);
+
+    const res = await sendPaymentRequest(
+      amount,
+      transactionId
+    );
+
+    console.log("Payment QR 👉", res);
+
+    if (res?.success) {
+      setPaymentData(res.data);
+    }
+  } catch (err) {
+    console.error("QR Payment Error:", err);
+  }
+};
   const mapCartToFoodPayload = (items: any[]) => {
     return items.map((item) => ({
       Id: item.id, // backend food ID
@@ -327,6 +340,15 @@ OutletName: selectedOutlet?.name || "",
       setSelectedOnline(onlineTypes[0]);
     }
   }, [paymentMode, onlineTypes]);
+
+  useEffect(() => {
+  if (
+    paymentMode === "ONLINE" &&
+    (billData?.GrandTotal ?? total) > 0
+  ) {
+    fetchPaymentQR();
+  }
+}, [paymentMode, billData]);
   return (
     <>
       {activePage === "sales" ? (
@@ -470,7 +492,7 @@ OutletName: selectedOutlet?.name || "",
                     {/* QR BOX */}
                     <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
                       <QRCodeCanvas
-                        value={generateUPIUrl()}
+                      value={paymentData?.qrString || ""}
                         size={
                           window.innerWidth < 640
                             ? 160 // 📱 mobile
@@ -487,14 +509,14 @@ OutletName: selectedOutlet?.name || "",
 
                     {/* Amount */}
                     <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
-                      ₹{(billData?.GrandTotal ?? total).toFixed(2)}
+                ₹{((paymentData?.amount || 0) / 100).toFixed(2)}
                     </p>
 
                     <p className="text-xs text-gray-400 text-center">
                       Scan using any UPI app
                     </p>
                   </div>
-                )}
+                )}  
               </div>
 
               {/* SUMMARY + PRINTER */}
@@ -539,7 +561,7 @@ OutletName: selectedOutlet?.name || "",
                 {/* Grand Total */}
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Grand Total</span>
-                  <span>₹{(billData?.GrandTotal ?? total).toFixed(2)}</span>
+                  <span>₹{paymentData?.amount?.toFixed(2) || "0.00"}</span>
                 </div>
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}

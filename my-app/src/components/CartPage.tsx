@@ -140,8 +140,7 @@ const startPaymentStatusPolling = (
       if (
         res?.success === true &&
         (
-          res?.data?.paymentStatus === "SUCCESS" ||
-          res?.data?.status === "SUCCESS" ||
+      
           res?.code === "SUCCESS"
         )
       ) {

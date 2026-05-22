@@ -561,12 +561,12 @@ OutletName: selectedOutlet?.name || "",
                 {/* Grand Total */}
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Grand Total</span>
-                  <span>₹{paymentData?.amount?.toFixed(2) || "0.00"}</span>
+                  <span>₹{((paymentData?.amount || 0) / 100).toFixed(2)}</span>
                 </div>
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {!printerConnected ? (
+                  {printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />

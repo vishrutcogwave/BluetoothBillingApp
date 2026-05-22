@@ -8,6 +8,7 @@ import PrinterSelector from "../components/PrinterSelector";
 import { useOutlet } from "../context/OutletContext";
 
 import {
+  checkPaymentStatus,
   getBill,
   getbillnouseorderid,
   getCardTypes,
@@ -45,6 +46,9 @@ const CartPage = () => {
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
   const [billData, setBillData] = useState<any>(null);
 const [paymentData, setPaymentData] = useState<any>(null);
+
+const [paymentChecking, setPaymentChecking] =
+  useState(false);
 
   useEffect(() => {
     const fetchBill = async () => {
@@ -92,13 +96,13 @@ const [paymentData, setPaymentData] = useState<any>(null);
     const random = Math.floor(Math.random() * 100000); // 5 digit random
     return `TXN-${timestamp}-${random}`;
   };
-const fetchPaymentQR = async () => {
+ const fetchPaymentQR = async () => {
   try {
     const transactionId = generateTransactionId();
 
-  const amount = Math.round(
-  (billData?.GrandTotal ?? total) * 100
-);
+    const amount = Math.round(
+      (billData?.GrandTotal ?? total) * 100
+    );
 
     const res = await sendPaymentRequest(
       amount,
@@ -108,11 +112,54 @@ const fetchPaymentQR = async () => {
     console.log("Payment QR 👉", res);
 
     if (res?.success) {
-      setPaymentData(res.data);
+      setPaymentData({
+        ...res.data,
+        localTransactionId: transactionId,
+      });
+
+      startPaymentStatusPolling(transactionId);
     }
   } catch (err) {
     console.error("QR Payment Error:", err);
   }
+};
+const startPaymentStatusPolling = (
+  transactionId: string
+) => {
+  if (paymentChecking) return;
+
+  setPaymentChecking(true);
+
+  const interval = setInterval(async () => {
+    try {
+      const res =
+        await checkPaymentStatus(transactionId);
+
+      console.log("Payment Status 👉", res);
+
+      if (
+        res?.success === true &&
+        (
+          res?.data?.paymentStatus === "SUCCESS" ||
+          res?.data?.status === "SUCCESS" ||
+          res?.code === "SUCCESS"
+        )
+      ) {
+        clearInterval(interval);
+
+        setPaymentChecking(false);
+
+        alert("✅ Payment Successful");
+
+        await handlePrintBill();
+      }
+    } catch (err) {
+      console.error(
+        "Payment status check failed",
+        err
+      );
+    }
+  }, 3000);
 };
   const mapCartToFoodPayload = (items: any[]) => {
     return items.map((item) => ({
@@ -292,7 +339,10 @@ OutletName: selectedOutlet?.name || "",
   try {
     setLoading(true);
 
-    const transactionId = generateTransactionId();
+  const transactionId =
+  paymentMode === "ONLINE"
+    ? paymentData?.localTransactionId
+    : generateTransactionId();
 
     const payload = createBillPayload();
     const res = await getBill(payload);

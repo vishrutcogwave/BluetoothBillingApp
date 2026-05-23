@@ -553,7 +553,7 @@ const CartPage = () => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {printerConnected ? (
+                  {!printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />

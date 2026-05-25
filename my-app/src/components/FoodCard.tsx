@@ -35,7 +35,7 @@ const FoodCard: React.FC<FoodCardProps> = ({
       <div className="w-full h-30 sm:h-28 md:h-32 overflow-hidden">
         <img
           onError={handleImgError}
-          src={image}
+         src={image || FALLBACK_IMAGE}
           alt={title}
           className="w-full h-full object-cover"
         />

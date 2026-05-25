@@ -126,6 +126,7 @@ import CartOverlay from "../components/CartOverlay";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { getFoodsImage } from "../api/kotService";
+import { FALLBACK_IMAGE } from "../utils";
 
 interface FoodItem {
   id: string | number;
@@ -171,18 +172,22 @@ const ItemsPage: React.FC<ItemsPageProps> = ({
           searchTerm
         );
 
-        const mapped = data.foodmodellist.map(
-          (item: any) => ({
-            id: item.ItemCode,
-            title: item.ItemName,
-            image: item.thumb,
-            description: item.description || "",
-            price:
-              item.CurrentPrize || item.ItemRate,
-            spicy: false,
-            catcode: item.CatCode,
-          })
-        );
+ const mapped = data.foodmodellist.map(
+  (item: any) => ({
+    id: item.ItemCode,
+    title: item.ItemName,
+    image:
+      item.thumb &&
+      item.thumb.trim() !== ""
+        ? item.thumb
+        : FALLBACK_IMAGE,
+    description: item.description || "",
+    price:
+      item.CurrentPrize || item.ItemRate,
+    spicy: false,
+    catcode: item.CatCode,
+  })
+);
 
         setSearchedItems(mapped);
       } catch (err) {

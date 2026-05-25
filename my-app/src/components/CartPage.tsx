@@ -382,7 +382,7 @@ const CartPage = () => {
 
                       <div>
                         <h3 className="font-semibold">{item.name}</h3>
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 text-lg">
                           ₹{item.price.toFixed(2)}
                         </p>
                       </div>
@@ -393,18 +393,18 @@ const CartPage = () => {
                         onClick={() =>
                           dispatch({ type: "DECREASE_QTY", payload: item.id })
                         }
-                        className="w-8 h-8 border rounded"
+                        className="w-10 h-10 border rounded text-xl font-bold"
                       >
                         -
                       </button>
 
-                      <span>{item.qty}</span>
+                      <span className="text-lg font-bold">{item.qty}</span>
 
                       <button
                         onClick={() =>
                           dispatch({ type: "INCREASE_QTY", payload: item.id })
                         }
-                        className="w-8 h-8 border rounded"
+                        className="w-10 h-10 border rounded text-xl font-bold"
                       >
                         +
                       </button>
@@ -424,7 +424,9 @@ const CartPage = () => {
 
               {/* PAYMENT MODE */}
               <div className="mt-4">
-                <h3 className="font-medium mb-2">Payment Mode</h3>
+                <h3 className="text-xl font-bold mb-4 ">
+  Payment Mode
+</h3>
 
                 {/* Main Modes */}
                 <div className="grid grid-cols-2 gap-2">
@@ -548,7 +550,8 @@ const CartPage = () => {
                 {/* Grand Total */}
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Grand Total</span>
-                  <span>₹{((paymentData?.amount || 0) / 100).toFixed(2)}</span>
+                  {/* <span>₹{((paymentData?.amount || 0) / 100).toFixed(2)}</span> */}
+                     <span>₹{(billData?.GrandTotal ?? total).toFixed(2)}</span>
                 </div>
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}

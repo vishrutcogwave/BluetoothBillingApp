@@ -66,14 +66,14 @@ export default function CategorySidebar({
               <button
                 key={outlet.id}
                 onClick={() => onSelectOutlet(outlet.id)}
-                className={`
-                  px-4 py-2 rounded-xl text-sm whitespace-nowrap transition flex-shrink-0
-                  ${
-                    isActive
-                      ? "bg-[#0576B2] text-white"
-                      : "bg-white/10 text-white"
-                  }
-                `}
+className={`
+  w-full p-3 rounded-lg text-[15px] font-semibold text-left transition
+  ${
+    isActive
+      ? "bg-[#0576B2] text-white"
+      : "bg-white/10 text-white"
+  }
+`}
               >
                 {outlet.name}
               </button>
@@ -242,14 +242,14 @@ export default function CategorySidebar({
               <button
                 key={outlet.id}
                 onClick={() => onSelectOutlet(outlet.id)}
-                className={`
-                  w-full p-2 rounded-lg text-sm text-left transition
-                  ${
-                    isActive
-                      ? "bg-[#0576B2]"
-                      : "bg-white/5 hover:bg-white/10"
-                  }
-                `}
+  className={`
+  w-full p-3 rounded-lg text-[17px] font-semibold text-left transition
+  ${
+    isActive
+      ? "bg-[#0576B2] text-white"
+      : "bg-white/10 text-white"
+  }
+`}
               >
                 {outlet.name}
               </button>

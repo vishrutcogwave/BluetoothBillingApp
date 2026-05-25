@@ -62,7 +62,7 @@ const FoodCard: React.FC<FoodCardProps> = ({
           {description || ""}
         </p>
 
-        <span className="font-bold text-xs sm:text-sm md:text-base mb-2">
+        <span className="font-bold text-lg sm:text-xl md:text-2xl  mb-2">
           ₹{price.toFixed(2)}
         </span>
 

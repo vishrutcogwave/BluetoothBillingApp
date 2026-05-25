@@ -190,226 +190,225 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     );
   }
 
-  return (
-    <div className="p-3 md:p-4 space-y-4 bg-gray-100 min-h-screen">
-      {/* HEADER */}
-      <div className="flex items-center gap-2">
-        <button onClick={onBack}>
-          <ArrowLeft size={20} />
-        </button>
+ return (
+  <div className="p-3 md:p-4 space-y-4 bg-gray-100 min-h-screen">
+    {/* HEADER */}
+    <div className="flex items-center gap-2">
+      <button onClick={onBack}>
+        <ArrowLeft size={20} />
+      </button>
 
-        <h1 className="text-lg font-bold">
-          Sales Report
-        </h1>
-      </div>
+      <h1 className="text-3xl font-bold">
+        Sales Report
+      </h1>
+    </div>
 
-      {/* GRAPH */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h2 className="text-sm font-semibold mb-3">
-          Payment Methods
-        </h2>
+    {/* GRAPH */}
+    <div className="bg-white rounded-lg shadow p-4">
+      <h2 className="text-2xl font-semibold mb-3">
+      </h2>
 
-        <div className="flex items-end justify-evenly h-44">
-          {paymentData.map((item) => (
-            <div
-              key={item.label}
-              className="flex flex-col items-center"
-            >
-              <span className="text-xs font-bold mb-1">
-                {
-                  paymentCounts[
-                    item.label as keyof typeof paymentCounts
-                  ]
-                }
-              </span>
-
-              <div
-                className={`w-10 rounded ${item.color}`}
-                style={{
-                  height: `${
-                    (item.value / maxValue) * 120
-                  }px`,
-                }}
-              />
-
-              <span className="text-xs mt-1 text-gray-600">
-                {item.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* SALES SUMMARY */}
-      <div className="bg-white rounded-lg shadow p-4 space-y-3">
-        <h2 className="text-sm font-semibold">
-          Sales Summary
-        </h2>
-
-        {/* DATE PICKERS */}
-        <div className="flex items-center gap-3 text-xs text-gray-700">
-          <div>
-            <label className="mr-1">From:</label>
-
-            <input
-              type="date"
-              value={startDate}
-              max={endDate}
-              onChange={(e) =>
-                setStartDate(e.target.value)
-              }
-              className="border rounded px-2 py-1 text-xs"
-            />
-          </div>
-
-          <div>
-            <label className="mr-1">To:</label>
-
-            <input
-              type="date"
-              value={endDate}
-              min={startDate}
-              onChange={(e) =>
-                setEndDate(e.target.value)
-              }
-              className="border rounded px-2 py-1 text-xs"
-            />
-          </div>
-        </div>
-
-        {/* TABLE */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border border-gray-300">
-            <tbody>
-              {Object.entries(groupedBills).map(
-                ([outlet, outletBills]) => (
-                  <React.Fragment key={outlet}>
-                    {/* Outlet Header */}
-                    <tr className="bg-gray-200">
-                      <td
-                        colSpan={2}
-                        className="border px-2 py-2 font-bold text-center"
-                      >
-                        {outlet}
-                      </td>
-                    </tr>
-
-                    {/* Table Header */}
-                    <tr className="bg-gray-100 font-semibold">
-                      <td className="border px-2 py-1">
-                        BILL NO
-                      </td>
-
-                      <td className="border px-2 py-1 text-right">
-                        NET AMT
-                      </td>
-                    </tr>
-
-                    {/* Bills */}
-                    {outletBills.map((b) => (
-                      <tr
-                        key={`${outlet}-${b.BillNo}`}
-                      >
-                        <td className="border px-2 py-1">
-                          {b.BillNo}
-                        </td>
-
-                        <td className="border px-2 py-1 text-right">
-                          ₹ {b.Grand.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {/* Outlet Total */}
-                    <tr className="bg-gray-50 font-bold">
-                      <td className="border px-2 py-1 text-right">
-                        TOTAL
-                      </td>
-
-                      <td className="border px-2 py-1 text-right">
-                        ₹{" "}
-                        {outletBills
-                          .reduce(
-                            (sum, b) =>
-                              sum + (b.Grand || 0),
-                            0,
-                          )
-                          .toFixed(2)}
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                ),
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* TOTALS */}
-        <div className="mt-4 border rounded-md p-3 text-xs">
-          <div className="flex justify-between">
-            <span>GST :</span>
-
-            <span>
-              ₹ {gstAmount.toFixed(2)}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>CASH :</span>
-
-            <span>
-              ₹ {totalsByMethod.Cash.toFixed(2)}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>CARD :</span>
-
-            <span>
-              ₹ {totalsByMethod.Card.toFixed(2)}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span>ONLINE :</span>
-
-            <span>
-              ₹ {totalsByMethod.Online.toFixed(2)}
-            </span>
-          </div>
-
-          <div className="flex justify-between font-bold border-t mt-2 pt-1">
-            <span>TOTAL :</span>
-
-            <span>
-              ₹ {totalNetAmount.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* PRINT */}
-      <div className="mt-4 space-y-3">
-        {!printerConnected ? (
-          <PrinterSelector
-            onConnected={() =>
-              setPrinterConnected(true)
-            }
-          />
-        ) : (
-          <button
-            disabled={printing}
-            onClick={handlePrint}
-            className="w-full bg-blue-600 text-white py-2 rounded text-sm"
+      <div className="flex items-end justify-evenly h-44">
+        {paymentData.map((item) => (
+          <div
+            key={item.label}
+            className="flex flex-col items-center"
           >
-            {printing
-              ? "Printing..."
-              : "Print Report 🖨️"}
-          </button>
-        )}
+            <span className="text-lg font-bold mb-1">
+              {
+                paymentCounts[
+                  item.label as keyof typeof paymentCounts
+                ]
+              }
+            </span>
+
+            <div
+              className={`w-10 rounded ${item.color}`}
+              style={{
+                height: `${
+                  (item.value / maxValue) * 120
+                }px`,
+              }}
+            />
+
+            <span className="text-lg mt-1 text-gray-600">
+              {item.label}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
-  );
+
+    {/* SALES SUMMARY */}
+    <div className="bg-white rounded-lg shadow p-4 space-y-3">
+      <h2 className="text-2xl font-semibold">
+        Sales Summary
+      </h2>
+
+      {/* DATE PICKERS */}
+      <div className="flex items-center gap-3 text-lg text-gray-700">
+        <div>
+          <label className="mr-1">From:</label>
+
+          <input
+            type="date"
+            value={startDate}
+            max={endDate}
+            onChange={(e) =>
+              setStartDate(e.target.value)
+            }
+            className="border rounded px-2 py-1 text-lg"
+          />
+        </div>
+
+        <div>
+          <label className="mr-1">To:</label>
+
+          <input
+            type="date"
+            value={endDate}
+            min={startDate}
+            onChange={(e) =>
+              setEndDate(e.target.value)
+            }
+            className="border rounded px-2 py-1 text-lg"
+          />
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-lg border border-gray-300">
+          <tbody>
+            {Object.entries(groupedBills).map(
+              ([outlet, outletBills]) => (
+                <React.Fragment key={outlet}>
+                  {/* Outlet Header */}
+                  <tr className="bg-gray-200">
+                    <td
+                      colSpan={2}
+                      className="border px-2 py-2 font-bold text-center text-xl"
+                    >
+                      {outlet}
+                    </td>
+                  </tr>
+
+                  {/* Table Header */}
+                  <tr className="bg-gray-100 font-semibold text-lg">
+                    <td className="border px-2 py-1">
+                      BILL NO
+                    </td>
+
+                    <td className="border px-2 py-1 text-right">
+                      NET AMT
+                    </td>
+                  </tr>
+
+                  {/* Bills */}
+                  {outletBills.map((b) => (
+                    <tr
+                      key={`${outlet}-${b.BillNo}`}
+                    >
+                      <td className="border px-2 py-1">
+                        {b.BillNo}
+                      </td>
+
+                      <td className="border px-2 py-1 text-right">
+                        ₹ {b.Grand.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Outlet Total */}
+                  <tr className="bg-gray-50 font-bold">
+                    <td className="border px-2 py-1 text-right">
+                      TOTAL
+                    </td>
+
+                    <td className="border px-2 py-1 text-right">
+                      ₹{" "}
+                      {outletBills
+                        .reduce(
+                          (sum, b) =>
+                            sum + (b.Grand || 0),
+                          0,
+                        )
+                        .toFixed(2)}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ),
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* TOTALS */}
+      <div className="mt-4 border rounded-md p-3 text-lg">
+        <div className="flex justify-between">
+          <span>GST :</span>
+
+          <span>
+            ₹ {gstAmount.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>CASH :</span>
+
+          <span>
+            ₹ {totalsByMethod.Cash.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>CARD :</span>
+
+          <span>
+            ₹ {totalsByMethod.Card.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>ONLINE :</span>
+
+          <span>
+            ₹ {totalsByMethod.Online.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between font-bold border-t mt-2 pt-1 text-2xl">
+          <span>TOTAL :</span>
+
+          <span>
+            ₹ {totalNetAmount.toFixed(2)}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {/* PRINT */}
+    <div className="mt-4 space-y-3">
+      {!printerConnected ? (
+        <PrinterSelector
+          onConnected={() =>
+            setPrinterConnected(true)
+          }
+        />
+      ) : (
+        <button
+          disabled={printing}
+          onClick={handlePrint}
+          className="w-full bg-blue-600 text-white py-3 rounded text-xl"
+        >
+          {printing
+            ? "Printing..."
+            : "Print Report 🖨️"}
+        </button>
+      )}
+    </div>
+  </div>
+);
 };
 
 export default SalesReport;

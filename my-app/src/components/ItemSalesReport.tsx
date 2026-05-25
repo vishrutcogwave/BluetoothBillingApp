@@ -73,117 +73,147 @@ const ItemSalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   if (loading) return <div className="p-4">Loading report...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
-  return (
-    <div className="p-3 md:p-4 space-y-4 bg-gray-100 min-h-screen">
-      
-      {/* HEADER */}
-      <div className="flex items-center gap-2">
-        <button onClick={onBack}>
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-bold">Item Sales Report</h1>
-      </div>
+return (
+  <div className="p-3 md:p-4 space-y-4 bg-gray-100 min-h-screen">
+    
+    {/* HEADER */}
+    <div className="flex items-center gap-2">
+      <button onClick={onBack}>
+        <ArrowLeft size={20} />
+      </button>
 
-      {/* DATE FILTER */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center gap-3 text-xs text-gray-700">
-          <div>
-            <label className="mr-1">From:</label>
-            <input
-              type="date"
-              value={startDate}
-              max={endDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border rounded px-2 py-1 text-xs"
-            />
-          </div>
-          <div>
-            <label className="mr-1">To:</label>
-            <input
-              type="date"
-              value={endDate}
-              min={startDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border rounded px-2 py-1 text-xs"
-            />
-          </div>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold">
+        Item Sales Report
+      </h1>
+    </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h2 className="text-sm font-semibold mb-3">Items</h2>
+    {/* DATE FILTER */}
+    <div className="bg-white rounded-lg shadow p-4">
+      <div className="flex items-center gap-3 text-lg text-gray-700">
+        <div>
+          <label className="mr-1">From:</label>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border px-2 py-1 text-left">ITEM</th>
-                <th className="border px-2 py-1 text-right">RATE</th>
-                <th className="border px-2 py-1 text-right">QTY</th>
-                <th className="border px-2 py-1 text-right">TOTAL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sales.length > 0 ? (
-                sales.map((item, i) => (
-                  <tr key={i}>
-                    <td className="border px-2 py-1">
-                      {item.ItemName.replace("\n", " ")}
-                    </td>
-                    <td className="border px-2 py-1 text-right">
-                      ₹ {item.Rate.toFixed(2)}
-                    </td>
-                    <td className="border px-2 py-1 text-right">
-                      {item.Qty}
-                    </td>
-                    <td className="border px-2 py-1 text-right">
-                      ₹ {item.Total.toFixed(2)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="text-center py-3 text-gray-500"
-                  >
-                    No data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <input
+            type="date"
+            value={startDate}
+            max={endDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border rounded px-2 py-1 text-lg"
+          />
         </div>
 
-        {/* TOTAL */}
-        <div className="mt-4 border rounded-md p-3 text-xs font-bold flex justify-between">
-          <span>TOTAL :</span>
-          <span>
-            ₹{" "}
-            {sales
-              .reduce((sum, i) => sum + (i.Total || 0), 0)
-              .toFixed(2)}
-          </span>
-        </div>
-      </div>
+        <div>
+          <label className="mr-1">To:</label>
 
-      {/* PRINT */}
-      <div className="mt-4 space-y-3">
-        {!printerConnected ? (
-          <PrinterSelector onConnected={() => setPrinterConnected(true)} />
-        ) : (
-          <button
-            disabled={printing}
-            onClick={handlePrint}
-            className="w-full bg-blue-600 text-white py-2 rounded text-sm"
-          >
-            {printing ? "Printing..." : "Print Report 🖨️"}
-          </button>
-        )}
+          <input
+            type="date"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border rounded px-2 py-1 text-lg"
+          />
+        </div>
       </div>
     </div>
-  );
+
+    {/* TABLE */}
+    <div className="bg-white rounded-lg shadow p-4">
+      <h2 className="text-2xl font-semibold mb-3">
+        Items
+      </h2>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-lg border border-gray-300">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-2 py-2 text-left">
+                ITEM
+              </th>
+
+              <th className="border px-2 py-2 text-right">
+                RATE
+              </th>
+
+              <th className="border px-2 py-2 text-right">
+                QTY
+              </th>
+
+              <th className="border px-2 py-2 text-right">
+                TOTAL
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {sales.length > 0 ? (
+              sales.map((item, i) => (
+                <tr key={i}>
+                  <td className="border px-2 py-2">
+                    {item.ItemName.replace("\n", " ")}
+                  </td>
+
+                  <td className="border px-2 py-2 text-right">
+                    {item.Rate.toFixed(2)}
+                  </td>
+
+                  <td className="border px-2 py-2 text-right">
+                    {item.Qty}
+                  </td>
+
+                  <td className="border px-2 py-2 text-right">
+                    {item.Total.toFixed(2)}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="text-center py-3 text-gray-500 text-lg"
+                >
+                  No data available
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* TOTAL */}
+      <div className="mt-4 border rounded-md p-3 text-2xl font-bold flex justify-between">
+        <span>TOTAL :</span>
+
+        <span>
+          ₹{" "}
+          {sales
+            .reduce((sum, i) => sum + (i.Total || 0), 0)
+            .toFixed(2)}
+        </span>
+      </div>
+    </div>
+
+    {/* PRINT */}
+    <div className="mt-4 space-y-3">
+      {!printerConnected ? (
+        <PrinterSelector
+          onConnected={() =>
+            setPrinterConnected(true)
+          }
+        />
+      ) : (
+        <button
+          disabled={printing}
+          onClick={handlePrint}
+          className="w-full bg-blue-600 text-white py-3 rounded text-xl"
+        >
+          {printing
+            ? "Printing..."
+            : "Print Report 🖨️"}
+        </button>
+      )}
+    </div>
+  </div>
+);
 };
 
 export default ItemSalesReport;

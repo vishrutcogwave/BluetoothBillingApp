@@ -246,21 +246,19 @@ const fetchOutlets = async () => {
                 loading ? (
                   <FoodLoader />
                 ) : (
-                  <ItemsPage
-                    items={items.map((item) => ({
-                      id: item.ItemCode,
-                      title: item.ItemName,
-                      image:
-                        item.thumb || FALLBACK_IMAGE,
-                      description:
-                        item.description || "",
-                      price:
-                        item.CurrentPrize ||
-                        item.ItemRate,
-                      spicy: false,
-                      catcode: item.CatCode,
-                    }))}
-                  />
+                 <ItemsPage
+  items={items.map((item) => ({
+    id: item.ItemCode,
+    title: item.ItemName,
+    image: item.thumb || FALLBACK_IMAGE,
+    description: item.description || "",
+    price:
+      item.CurrentPrize || item.ItemRate,
+    spicy: false,
+    catcode: item.CatCode,
+  }))}
+  activeOutlet={activeOutlet || 0}
+/>
                 )
               }
             />

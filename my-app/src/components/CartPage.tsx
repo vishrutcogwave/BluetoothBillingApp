@@ -54,6 +54,14 @@ const CartPage = () => {
   const [paymentChecking, setPaymentChecking] = useState(false);
 
   useEffect(() => {
+  if (
+    paymentMode === "CARD" &&
+    cardTypes.length > 0
+  ) {
+    setSelectedCard(cardTypes[0]);
+  }
+}, [paymentMode, cardTypes]);
+  useEffect(() => {
     const fetchBill = async () => {
       try {
         if (items.length === 0) return;
@@ -629,7 +637,7 @@ const CartPage = () => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {printerConnected ? (
+                  {!printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />

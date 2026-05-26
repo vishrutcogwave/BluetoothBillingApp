@@ -127,15 +127,6 @@ const [selectedOutletIds, setSelectedOutletIds] =
 
   /* ================= CALCULATIONS ================= */
 
-  const totalNetAmount = useMemo(
-    () => bills.reduce((sum, b) => sum + (b.Grand || 0), 0),
-    [bills],
-  );
-
-  const gstAmount = useMemo(
-    () => bills.reduce((sum, b) => sum + (b.Tax || 0), 0),
-    [bills],
-  );
 
   const totalsByMethod = useMemo(() => {
     return {
@@ -190,28 +181,37 @@ const [selectedOutletIds, setSelectedOutletIds] =
     try {
       setPrinting(true);
 
-      await printerService.printSalesReport({
-       outletName:
-  selectedOutletIds ===
-  outlets.map((o) => o.id).join(",")
-    ? "All Outlets"
-    : outlets.find(
-        (o) => String(o.id) === selectedOutletIds
-      )?.name ?? "",
-        fromDate: startDate,
-        toDate: endDate,
-        bills: bills.map((b) => ({
-          BillNo: b.BillNo,
-          Grand: b.Grand,
-        })),
-        totals: {
-          gst: gstAmount,
-          cash: totalsByMethod.Cash,
-          card: totalsByMethod.Card,
-          online: totalsByMethod.Online,
-          total: totalNetAmount,
-        },
-      });
+    await printerService.printSalesReport({
+  outletName:
+    selectedOutletIds ===
+    outlets.map((o) => o.id).join(",")
+      ? "All Outlets"
+      : outlets.find(
+          (o) =>
+            String(o.id) ===
+            selectedOutletIds,
+        )?.name ?? "",
+
+  fromDate: startDate,
+
+  toDate: endDate,
+
+  bills: bills.map((b) => ({
+    BillNo: b.BillNo,
+    Grand: b.Grand,
+  })),
+
+  summary: summary.map((s) => ({
+    Particulars: s.Particulars,
+    Amount: s.Amount,
+  })),
+
+  total: bills.reduce(
+    (sum, item) =>
+      sum + Number(item.Grand || 0),
+    0,
+  ),
+});
     } catch (err) {
       console.error(err);
       alert("❌ Error printing report");

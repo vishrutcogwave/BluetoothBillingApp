@@ -329,13 +329,11 @@ async printSalesReport(params: {
     BillNo: string;
     Grand: number;
   }[];
-  totals: {
-    gst: number;
-    cash: number;
-    card: number;
-    online: number;
-    total: number;
-  };
+  summary: {
+    Particulars: string;
+    Amount: number;
+  }[];
+  total: number;
 }) {
   const ESC = 0x1b;
   const WIDTH = 32;
@@ -354,49 +352,117 @@ async printSalesReport(params: {
 
   /* ================= HEADER ================= */
   bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...enc(center("SALES REPORT") + "\n"));
+
+  bytes.push(
+    ...enc(center("SALES REPORT") + "\n")
+  );
+
   bytes.push(ESC, 0x45, 0x00);
 
-  bytes.push(...enc(center(`Outlet: ${params.outletName}`) + "\n"));
+  bytes.push(
+    ...enc(
+      center(
+        `Outlet: ${params.outletName}`,
+      ) + "\n",
+    ),
+  );
+
   bytes.push(...enc(line + "\n"));
 
-  /* ================= DATE RANGE ================= */
+  /* ================= DATE ================= */
   bytes.push(ESC, 0x61, 0x00);
-  bytes.push(...enc(`From : ${params.fromDate}\n`));
-  bytes.push(...enc(`To   : ${params.toDate}\n`));
+
+  bytes.push(
+    ...enc(`From : ${params.fromDate}\n`),
+  );
+
+  bytes.push(
+    ...enc(`To   : ${params.toDate}\n`),
+  );
+
   bytes.push(...enc(line + "\n"));
 
-  /* ================= BILL SUMMARY ================= */
-  bytes.push(...enc("BILL NO           AMT\n"));
+  /* ================= BILLS ================= */
+  bytes.push(
+    ...enc("BILL NO           AMT\n"),
+  );
+
   bytes.push(...enc(line + "\n"));
 
   params.bills.forEach((b) => {
     const billNo = b.BillNo.padEnd(16);
-    const amt = b.Grand.toFixed(2).padStart(14);
-    bytes.push(...enc(`${billNo}${amt}\n`));
+
+    const amt = b.Grand
+      .toFixed(2)
+      .padStart(14);
+
+    bytes.push(
+      ...enc(`${billNo}${amt}\n`),
+    );
   });
 
   bytes.push(...enc(line + "\n"));
 
-  /* ================= TOTALS ================= */
-  bytes.push(...enc(row("GST", `Rs ${params.totals.gst.toFixed(2)}`)));
-  bytes.push(...enc(row("CASH", `Rs ${params.totals.cash.toFixed(2)}`)));
-  bytes.push(...enc(row("CARD", `Rs ${params.totals.card.toFixed(2)}`)));
-  bytes.push(...enc(row("ONLINE", `Rs ${params.totals.online.toFixed(2)}`)));
+  /* ================= SUMMARY ================= */
+  bytes.push(
+    ESC,
+    0x45,
+    0x01,
+  );
+
+  bytes.push(...enc("SUMMARY\n"));
+
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
 
   bytes.push(...enc(line + "\n"));
 
-  bytes.push(ESC, 0x45, 0x01);
+  params.summary.forEach((s) => {
+    bytes.push(
+      ...enc(
+        row(
+          s.Particulars || "CARD",
+          `Rs ${s.Amount.toFixed(2)}`,
+        ),
+      ),
+    );
+  });
+
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= TOTAL ================= */
+  bytes.push(
+    ESC,
+    0x45,
+    0x01,
+  );
+
   bytes.push(
     ...enc(
-      center(`TOTAL : Rs ${params.totals.total.toFixed(2)}`) + "\n"
-    )
+      center(
+        `TOTAL : Rs ${params.total.toFixed(
+          2,
+        )}`,
+      ) + "\n",
+    ),
   );
-  bytes.push(ESC, 0x45, 0x00);
 
-  bytes.push(...enc("\nThank You 🙏\n\n\n"));
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
 
-  await this.write(new Uint8Array(bytes));
+  bytes.push(
+    ...enc("\nThank You 🙏\n\n\n"),
+  );
+
+  await this.write(
+    new Uint8Array(bytes),
+  );
 }
 
 async printItemSalesReport(params: {
@@ -422,57 +488,153 @@ async printItemSalesReport(params: {
   const center = (t: string) =>
     t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
 
-  /* ================= HEADER ================= */
-  bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...enc(center("ITEM SALES REPORT") + "\n"));
-  bytes.push(ESC, 0x45, 0x00);
+  const row = (
+    l: string,
+    v: string,
+  ) =>
+    `${l.padEnd(
+      WIDTH - v.length,
+    )}${v}\n`;
 
-  bytes.push(...enc(center(`Outlet: ${params.outletName}`) + "\n"));
+  /* ================= HEADER ================= */
+  bytes.push(
+    ESC,
+    0x61,
+    0x01,
+    ESC,
+    0x45,
+    0x01,
+  );
+
+  bytes.push(
+    ...enc(
+      center(
+        "ITEM SALES REPORT",
+      ) + "\n",
+    ),
+  );
+
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
+
+  bytes.push(
+    ...enc(
+      center(
+        `Outlet: ${params.outletName}`,
+      ) + "\n",
+    ),
+  );
+
   bytes.push(...enc(line + "\n"));
 
   /* ================= DATE ================= */
-  bytes.push(ESC, 0x61, 0x00);
-  bytes.push(...enc(`From : ${params.fromDate}\n`));
-  bytes.push(...enc(`To   : ${params.toDate}\n`));
+  bytes.push(
+    ESC,
+    0x61,
+    0x00,
+  );
+
+  bytes.push(
+    ...enc(`From : ${params.fromDate}\n`),
+  );
+
+  bytes.push(
+    ...enc(`To   : ${params.toDate}\n`),
+  );
+
   bytes.push(...enc(line + "\n"));
 
-  /* ================= HEADER ROW ================= */
-  bytes.push(...enc("ITEM        QTY   RATE   AMT\n"));
+  /* ================= TABLE HEADER ================= */
+  bytes.push(
+    ...enc(
+      "ITEM          QTY    AMT\n",
+    ),
+  );
+
   bytes.push(...enc(line + "\n"));
 
   /* ================= ITEMS ================= */
   params.items.forEach((item) => {
-    const name = item.ItemName.replace("\n", " ")
+    const name = item.ItemName
+      .replace("\n", " ")
       .slice(0, 12)
       .padEnd(12);
 
-    const qty = String(item.Qty).padStart(3);
-    const rate = item.Rate.toFixed(2).padStart(7);
-    const total = item.Total.toFixed(2).padStart(7);
+    const qty = String(
+      item.Qty,
+    ).padStart(4);
 
-    bytes.push(...enc(`${name} ${qty} ${rate} ${total}\n`));
+    const total = item.Total
+      .toFixed(2)
+      .padStart(10);
+
+    bytes.push(
+      ...enc(
+        `${name}${qty}${total}\n`,
+      ),
+    );
   });
 
   bytes.push(...enc(line + "\n"));
 
-  /* ================= GRAND TOTAL ================= */
-  const grandTotal = params.items.reduce(
-    (sum, i) => sum + i.Total,
-    0
+  /* ================= SUMMARY ================= */
+  const totalQty = params.items.reduce(
+    (sum, i) => sum + Number(i.Qty || 0),
+    0,
   );
 
-  bytes.push(ESC, 0x45, 0x01);
+  const grandTotal =
+    params.items.reduce(
+      (sum, i) =>
+        sum + Number(i.Total || 0),
+      0,
+    );
+
   bytes.push(
-    ...enc(center(`TOTAL : Rs ${grandTotal.toFixed(2)}`) + "\n")
+    ...enc(
+      row(
+        "TOTAL QTY",
+        String(totalQty),
+      ),
+    ),
   );
-  bytes.push(ESC, 0x45, 0x00);
 
-  bytes.push(...enc("\nThank You 🙏\n\n\n"));
+  bytes.push(...enc(line + "\n"));
 
-  await this.write(new Uint8Array(bytes));
+  /* ================= TOTAL ================= */
+  bytes.push(
+    ESC,
+    0x45,
+    0x01,
+  );
+
+  bytes.push(
+    ...enc(
+      center(
+        `TOTAL : Rs ${grandTotal.toFixed(
+          2,
+        )}`,
+      ) + "\n",
+    ),
+  );
+
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
+
+  bytes.push(
+    ...enc("\nThank You 🙏\n\n\n"),
+  );
+
+  await this.write(
+    new Uint8Array(bytes),
+  );
 }
-
-
 
 }
 

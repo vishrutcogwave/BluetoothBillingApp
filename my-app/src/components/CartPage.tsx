@@ -301,7 +301,14 @@ useEffect(() => {
           amount: Number(tax?.GrandTotal ?? totalAmount),
           merchantId: transactionId,
           providerReferenceId: "POS",
-          qrString: "",
+        qrString:
+  paymentMode === "CASH"
+    ? "CASH"
+    : paymentMode === "CARD"
+      ? selectedCard?.CardType || ""
+      : isQRActive
+        ? "QR"
+        : selectedOnline?.CardType || "",
         },
       },
     };
@@ -633,7 +640,7 @@ useEffect(() => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {!printerConnected ? (
+                  {printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />

@@ -111,7 +111,7 @@ export const getonlineTypes = async (): Promise<any> => {
 export const getChanceSheetReport = async (
   fromdate: string,
   todate: string,
-  outlet: number
+  outlet: string
 ): Promise<any> => {
   const response = await axiosInstance.get(
     "/api/pos/reports/Chancesheet",
@@ -126,7 +126,6 @@ export const getChanceSheetReport = async (
 
   return response.data;
 };
-
 
 
 export const getItemSalesReport = async (

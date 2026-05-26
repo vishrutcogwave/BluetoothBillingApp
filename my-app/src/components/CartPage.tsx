@@ -321,7 +321,7 @@ useEffect(() => {
       setLoading(true);
 
       const transactionId =
-        paymentMode === "ONLINE"
+        paymentMode === "ONLINE" && isQRActive
           ? onlineTransactionId
           : generateTransactionId();
 
@@ -640,35 +640,23 @@ useEffect(() => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {printerConnected ? (
+                  {!printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />
                   ) : (
                     <button
-                      disabled={
-  loading ||
-  (paymentMode === "ONLINE" && isQRActive)
-}
+             disabled={loading}
                       onClick={() => handlePrintBill()}
-                      className={`w-full text-white font-semibold py-3 rounded-xl transition ${
-                        paymentMode === "ONLINE"
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : ""
-                      }`}
-                      style={{
-                        backgroundColor:
-                          paymentMode === "ONLINE" ? "#9CA3AF" : mainBlue,
-                      }}
+                     className="w-full text-white font-semibold py-3 rounded-xl transition"
+                     style={{
+  backgroundColor: mainBlue,
+}}
                       onMouseOver={(e) => {
-                        if (paymentMode !== "ONLINE") {
-                          e.currentTarget.style.backgroundColor = hoverBlue;
-                        }
+                      e.currentTarget.style.backgroundColor = hoverBlue;
                       }}
                       onMouseOut={(e) => {
-                        if (paymentMode !== "ONLINE") {
-                          e.currentTarget.style.backgroundColor = mainBlue;
-                        }
+                      e.currentTarget.style.backgroundColor = mainBlue;
                       }}
                     >
                       {loading ? "Processing..." : "Submit & Print 🧾"}

@@ -34,7 +34,7 @@ const CartPage = () => {
 
   const mainBlue = "#0576B2";
   const hoverBlue = "#0461A8";
-   
+
   const [printerConnected, setPrinterConnected] = useState(false);
   const [activePage, setActivePage] = useState<string>("home");
   const [loading, setLoading] = useState(false);
@@ -45,8 +45,8 @@ const CartPage = () => {
 
   const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
   const [cardTypes, setCardTypes] = useState<any[]>([]);
-const [selectedCard, setSelectedCard] = useState<any>(null);
-const [isQRActive, setIsQRActive] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [isQRActive, setIsQRActive] = useState(false);
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
   const [billData, setBillData] = useState<any>(null);
   const [paymentData, setPaymentData] = useState<any>(null);
@@ -71,46 +71,40 @@ const [isQRActive, setIsQRActive] = useState(false);
     fetchBill();
   }, [items]);
 
-useEffect(() => {
-  const fetchPaymentTypes = async () => {
-    try {
-      // ✅ CARD TYPES
-      const cardRes = await getCardTypes();
+  useEffect(() => {
+    const fetchPaymentTypes = async () => {
+      try {
+        // ✅ CARD TYPES
+        const cardRes = await getCardTypes();
 
-      console.log("Cards 👉", cardRes);
+        console.log("Cards 👉", cardRes);
 
-      setCardTypes(
-        Array.isArray(cardRes)
-          ? cardRes
-          : cardRes?.data || [],
-      );
+        setCardTypes(Array.isArray(cardRes) ? cardRes : cardRes?.data || []);
 
-      // ✅ QR STATUS
-      const qrRes = await getOnlinePaymentTypes();
+        // ✅ QR STATUS
+        const qrRes = await getOnlinePaymentTypes();
 
-      console.log("QR Status 👉", qrRes);
+        console.log("QR Status 👉", qrRes);
 
-      setIsQRActive(qrRes?.IsQRActive === true);
+        setIsQRActive(qrRes?.IsQRActive === true);
 
-      // ✅ ONLINE TYPES ONLY IF QR DISABLED
-      if (!qrRes?.IsQRActive) {
-        const onlineRes = await getonlineTypes();
+        // ✅ ONLINE TYPES ONLY IF QR DISABLED
+        if (!qrRes?.IsQRActive) {
+          const onlineRes = await getonlineTypes();
 
-        console.log("Online 👉", onlineRes);
+          console.log("Online 👉", onlineRes);
 
-        setOnlineTypes(
-          Array.isArray(onlineRes)
-            ? onlineRes
-            : onlineRes?.data || [],
-        );
+          setOnlineTypes(
+            Array.isArray(onlineRes) ? onlineRes : onlineRes?.data || [],
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching payment types:", error);
       }
-    } catch (error) {
-      console.error("Error fetching payment types:", error);
-    }
-  };
+    };
 
-  fetchPaymentTypes();
-}, []);
+    fetchPaymentTypes();
+  }, []);
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
   };
@@ -295,25 +289,23 @@ useEffect(() => {
         code: paymentMode,
         message: "COMPLETED",
         data: {
-          transactionId:
-          transactionId,
+          transactionId: transactionId,
 
           amount: Number(tax?.GrandTotal ?? totalAmount),
           merchantId: transactionId,
           providerReferenceId: "POS",
-        qrString:
-  paymentMode === "CASH"
-    ? "CASH"
-    : paymentMode === "CARD"
-      ? selectedCard?.CardType || ""
-      : isQRActive
-        ? "QR"
-        : selectedOnline?.CardType || "",
+          qrString:
+            paymentMode === "CASH"
+              ? "CASH"
+              : paymentMode === "CARD"
+                ? selectedCard?.CardType || ""
+                : isQRActive
+                  ? "QR"
+                  : selectedOnline?.CardType || "",
         },
       },
     };
   };
-
 
   const handlePrintBill = async (onlineTransactionId?: string) => {
     debugger;
@@ -362,15 +354,15 @@ useEffect(() => {
     }
   }, [paymentMode, onlineTypes]);
 
- useEffect(() => {
-  if (
-    paymentMode === "ONLINE" &&
-    isQRActive &&
-    (billData?.GrandTotal ?? total) > 0
-  ) {
-    fetchPaymentQR();
-  }
-}, [paymentMode, billData, isQRActive]);
+  useEffect(() => {
+    if (
+      paymentMode === "ONLINE" &&
+      isQRActive &&
+      (billData?.GrandTotal ?? total) > 0
+    ) {
+      fetchPaymentQR();
+    }
+  }, [paymentMode, billData, isQRActive]);
   return (
     <>
       {activePage === "sales" ? (
@@ -459,13 +451,11 @@ useEffect(() => {
 
               {/* PAYMENT MODE */}
               <div className="mt-4">
-                <h3 className="text-xl font-bold mb-4 ">
-  Payment Mode
-</h3>
+                <h3 className="text-xl font-bold mb-4 ">Payment Mode</h3>
 
                 {/* Main Modes */}
-               <div className="grid grid-cols-3 gap-2">
-  {["CASH", "CARD", "ONLINE"].map((mode) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {["CASH", "CARD", "ONLINE"].map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setPaymentMode(mode as any)}
@@ -506,89 +496,89 @@ useEffect(() => {
                     )}
                   </div>
                 )} */}
-{/* CARD TYPES */}
-{paymentMode === "CARD" && (
-  <div className="mt-3 grid grid-cols-2 gap-2">
-    {cardTypes.length === 0 ? (
-      <p className="text-sm text-gray-500">
-        Loading card types...
-      </p>
-    ) : (
-      cardTypes.map((card) => (
-        <button
-          key={card.CardId}
-          onClick={() => setSelectedCard(card)}
-          className={`py-2 rounded-lg border text-sm transition
+                {/* CARD TYPES */}
+                {paymentMode === "CARD" && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {cardTypes.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        Loading card types...
+                      </p>
+                    ) : (
+                      cardTypes.map((card) => (
+                        <button
+                          key={card.CardId}
+                          onClick={() => setSelectedCard(card)}
+                          className={`py-2 rounded-lg border text-sm transition
           ${
             selectedCard?.CardId === card.CardId
               ? "bg-green-600 text-white border-green-600"
               : "bg-white"
           }`}
-        >
-          {card.CardType}
-        </button>
-      ))
-    )}
-  </div>
-)}
+                        >
+                          {card.CardType}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
                 {paymentMode === "ONLINE" && (
-                 <>
-  {isQRActive ? (
-    <div className="mt-6 flex flex-col items-center justify-center w-full">
-      <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
-        Scan & Pay
-      </p>
+                  <>
+                    {isQRActive ? (
+                      <div className="mt-6 flex flex-col items-center justify-center w-full">
+                        <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
+                          Scan & Pay
+                        </p>
 
-      <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
-        <QRCodeCanvas
-          value={paymentData?.qrString || ""}
-          size={
-            window.innerWidth < 640
-              ? 160
-              : window.innerWidth < 1024
-              ? 220
-              : 280
-          }
-          bgColor="#ffffff"
-          fgColor="#000000"
-          level="H"
-          includeMargin
-        />
-      </div>
+                        <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
+                          <QRCodeCanvas
+                            value={paymentData?.qrString || ""}
+                            size={
+                              window.innerWidth < 640
+                                ? 160
+                                : window.innerWidth < 1024
+                                  ? 220
+                                  : 280
+                            }
+                            bgColor="#ffffff"
+                            fgColor="#000000"
+                            level="H"
+                            includeMargin
+                          />
+                        </div>
 
-      <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
-        ₹{((paymentData?.amount || 0) / 100).toFixed(2)}
-      </p>
+                        <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
+                          ₹{((paymentData?.amount || 0) / 100).toFixed(2)}
+                        </p>
 
-      <p className="text-xs text-gray-400 text-center">
-        Scan using any UPI app
-      </p>
-    </div>
-  ) : (
-    <div className="mt-3 grid grid-cols-2 gap-2">
-      {onlineTypes.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          Loading online types...
-        </p>
-      ) : (
-        onlineTypes.map((online) => (
-          <button
-            key={online.CardId}
-            onClick={() => setSelectedOnline(online)}
-            className={`py-2 rounded-lg border text-sm transition
+                        <p className="text-xs text-gray-400 text-center">
+                          Scan using any UPI app
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {onlineTypes.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            Loading online types...
+                          </p>
+                        ) : (
+                          onlineTypes.map((online) => (
+                            <button
+                              key={online.CardId}
+                              onClick={() => setSelectedOnline(online)}
+                              className={`py-2 rounded-lg border text-sm transition
             ${
               selectedOnline?.CardId === online.CardId
                 ? "bg-purple-600 text-white border-purple-600"
                 : "bg-white"
             }`}
-          >
-            {online.CardType}
-          </button>
-        ))
-      )}
-    </div>
-  )}
-</>
+                            >
+                              {online.CardType}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -635,7 +625,7 @@ useEffect(() => {
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Grand Total</span>
                   {/* <span>₹{((paymentData?.amount || 0) / 100).toFixed(2)}</span> */}
-                     <span>₹{(billData?.GrandTotal ?? total).toFixed(2)}</span>
+                  <span>₹{(billData?.GrandTotal ?? total).toFixed(2)}</span>
                 </div>
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
@@ -646,17 +636,17 @@ useEffect(() => {
                     />
                   ) : (
                     <button
-             disabled={loading}
+                      disabled={loading}
                       onClick={() => handlePrintBill()}
-                     className="w-full text-white font-semibold py-3 rounded-xl transition"
-                     style={{
-  backgroundColor: mainBlue,
-}}
+                      className="w-full text-white font-semibold py-3 rounded-xl transition"
+                      style={{
+                        backgroundColor: mainBlue,
+                      }}
                       onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = hoverBlue;
+                        e.currentTarget.style.backgroundColor = hoverBlue;
                       }}
                       onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = mainBlue;
+                        e.currentTarget.style.backgroundColor = mainBlue;
                       }}
                     >
                       {loading ? "Processing..." : "Submit & Print 🧾"}
@@ -673,4 +663,3 @@ useEffect(() => {
 };
 
 export default CartPage;
-

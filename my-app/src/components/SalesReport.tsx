@@ -286,10 +286,12 @@ const [selectedOutletIds, setSelectedOutletIds] =
       </h2>
 
       {/* DATE PICKERS */}
-    <div className="flex flex-wrap items-center gap-3 text-lg text-gray-700">
+  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 text-lg text-gray-700">
   {/* FROM */}
-  <div>
-    <label className="mr-1">From:</label>
+  <div className="flex items-center gap-2 w-full sm:w-auto">
+    <label className="min-w-[55px]">
+      From:
+    </label>
 
     <input
       type="date"
@@ -298,13 +300,15 @@ const [selectedOutletIds, setSelectedOutletIds] =
       onChange={(e) =>
         setStartDate(e.target.value)
       }
-      className="border rounded px-2 py-1 text-lg"
+      className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
     />
   </div>
 
   {/* TO */}
-  <div>
-    <label className="mr-1">To:</label>
+  <div className="flex items-center gap-2 w-full sm:w-auto">
+    <label className="min-w-[55px]">
+      To:
+    </label>
 
     <input
       type="date"
@@ -313,22 +317,23 @@ const [selectedOutletIds, setSelectedOutletIds] =
       onChange={(e) =>
         setEndDate(e.target.value)
       }
-      className="border rounded px-2 py-1 text-lg"
+      className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
     />
   </div>
 
   {/* OUTLET */}
-  <div>
-    <label className="mr-1">Outlet:</label>
+  <div className="flex items-center gap-2 w-full sm:w-auto">
+    <label className="min-w-[55px]">
+      Outlet:
+    </label>
 
     <select
       value={selectedOutletIds}
       onChange={(e) =>
         setSelectedOutletIds(e.target.value)
       }
-      className="border rounded px-2 py-1 text-lg"
+      className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
     >
-      {/* ALL */}
       <option
         value={outlets
           .map((o) => o.id)
@@ -337,7 +342,6 @@ const [selectedOutletIds, setSelectedOutletIds] =
         All
       </option>
 
-      {/* SINGLE OUTLETS */}
       {outlets.map((outlet) => (
         <option
           key={outlet.id}
@@ -444,13 +448,13 @@ const [selectedOutletIds, setSelectedOutletIds] =
 
     <span>
       ₹{" "}
-      {summary
-        .reduce(
-          (sum, item) =>
-            sum + Number(item.Amount || 0),
-          0,
-        )
-        .toFixed(2)}
+     {bills
+  .reduce(
+    (sum, item) =>
+      sum + Number(item.Grand || 0),
+    0,
+  )
+  .toFixed(2)}
     </span>
   </div>
 </div>

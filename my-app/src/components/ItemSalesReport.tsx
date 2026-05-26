@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { getItemSalesReport } from "../api/kotService";
+import { getItemSalesReport, getOutletsForUser } from "../api/kotService";
 import { printerService } from "../services/printerService";
 import PrinterSelector from "./PrinterSelector";
 
@@ -18,10 +18,10 @@ const ItemSalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
+const [outlets, setOutlets] = useState<any[]>([]);
 
-  const storedOutlet = localStorage.getItem("selectedOutlet");
-  const selectedOutlet = storedOutlet ? JSON.parse(storedOutlet) : null;
-
+const [selectedOutletIds, setSelectedOutletIds] =
+  useState<string>("");
   const formatDate = (date: string) => {
     const d = new Date(date);
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -30,25 +30,68 @@ const ItemSalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     return `${month}/${day}/${year}`;
   };
 
-  /* ================= FETCH ================= */
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        const data = await getItemSalesReport(
-          formatDate(startDate),
-          formatDate(endDate)
-        );
-        setSales(data || []);
-      } catch (err) {
-        setError("Failed to load report");
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchReport();
-  }, [startDate, endDate]);
+  useEffect(() => {
+  const fetchOutlets = async () => {
+    try {
+      const username =
+        localStorage.getItem("username") || "";
+
+      const data = await getOutletsForUser(
+        username
+      );
+
+      const mapped = data.map((out: any) => ({
+        id: out.OltCode,
+        name: out.OltName,
+      }));
+
+      setOutlets(mapped);
+
+      const allIds = mapped
+        .map((o: any) => o.id)
+        .join(",");
+
+      setSelectedOutletIds(allIds);
+    } catch (err) {
+      console.error(
+        "Outlet fetch failed",
+        err
+      );
+    }
+  };
+
+  fetchOutlets();
+}, []);
+  /* ================= FETCH ================= */
+useEffect(() => {
+  if (!selectedOutletIds) return;
+
+  const fetchReport = async () => {
+    try {
+      setLoading(true);
+
+      const data =
+        await getItemSalesReport(
+          formatDate(startDate),
+          formatDate(endDate),
+          selectedOutletIds,
+        );
+
+      setSales(data || []);
+    } catch (err) {
+      setError("Failed to load report");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchReport();
+}, [
+  startDate,
+  endDate,
+  selectedOutletIds,
+]);
 
   /* ================= PRINT ================= */
   const handlePrint = async () => {
@@ -56,7 +99,15 @@ const ItemSalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       setPrinting(true);
 
       await printerService.printItemSalesReport({
-        outletName: selectedOutlet?.name ?? "",
+     outletName:
+  selectedOutletIds ===
+  outlets.map((o) => o.id).join(",")
+    ? "All Outlets"
+    : outlets.find(
+        (o) =>
+          String(o.id) ===
+          selectedOutletIds
+      )?.name ?? "",
         fromDate: startDate,
         toDate: endDate,
         items: sales,
@@ -88,33 +139,78 @@ return (
     </div>
 
     {/* DATE FILTER */}
-    <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex items-center gap-3 text-lg text-gray-700">
-        <div>
-          <label className="mr-1">From:</label>
+   <div className="bg-white rounded-lg shadow p-4">
+  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 text-lg text-gray-700">
 
-          <input
-            type="date"
-            value={startDate}
-            max={endDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-2 py-1 text-lg"
-          />
-        </div>
+    {/* FROM */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <label className="min-w-[55px]">
+        From:
+      </label>
 
-        <div>
-          <label className="mr-1">To:</label>
-
-          <input
-            type="date"
-            value={endDate}
-            min={startDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-2 py-1 text-lg"
-          />
-        </div>
-      </div>
+      <input
+        type="date"
+        value={startDate}
+        max={endDate}
+        onChange={(e) =>
+          setStartDate(e.target.value)
+        }
+        className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
+      />
     </div>
+
+    {/* TO */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <label className="min-w-[55px]">
+        To:
+      </label>
+
+      <input
+        type="date"
+        value={endDate}
+        min={startDate}
+        onChange={(e) =>
+          setEndDate(e.target.value)
+        }
+        className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
+      />
+    </div>
+
+    {/* OUTLET */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <label className="min-w-[55px]">
+        Outlet:
+      </label>
+
+      <select
+        value={selectedOutletIds}
+        onChange={(e) =>
+          setSelectedOutletIds(
+            e.target.value
+          )
+        }
+        className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
+      >
+        <option
+          value={outlets
+            .map((o) => o.id)
+            .join(",")}
+        >
+          All
+        </option>
+
+        {outlets.map((outlet) => (
+          <option
+            key={outlet.id}
+            value={outlet.id}
+          >
+            {outlet.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+</div>
 
     {/* TABLE */}
     <div className="bg-white rounded-lg shadow p-4">

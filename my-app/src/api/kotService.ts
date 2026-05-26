@@ -131,13 +131,15 @@ export const getChanceSheetReport = async (
 export const getItemSalesReport = async (
   fromdate: string,
   todate: string,
+  outlet: string,
 ): Promise<any> => {
   const response = await axiosInstance.get(
-    "/api/pos/reports/itemsales",
+    "/api/pos/reports/itemsalesoutletwise",
     {
       params: {
         fromdate,
         todate,
+        outlet,
       },
     }
   );

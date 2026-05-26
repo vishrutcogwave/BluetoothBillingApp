@@ -32,8 +32,7 @@ interface OutletItem {
 }
 
 export default function LandingPage() {
-  const [activeCategory, setActiveCategory] =
-    useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -43,71 +42,62 @@ export default function LandingPage() {
 
   const [outlets, setOutlets] = useState<OutletItem[]>([]);
 
-  const [activeOutlet, setActiveOutlet] =
-    useState<number | null>(null);
+  const [activeOutlet, setActiveOutlet] = useState<number | null>(null);
 
   const location = useLocation();
 
   const navigate = useNavigate();
 
   const { companyInfo, dispatch } = useCompany();
-  const {  dispatch: outletDispatch } = useOutlet();
+  const { dispatch: outletDispatch } = useOutlet();
 
   // ================= FETCH OUTLETS =================
-const fetchOutlets = async () => {
-  try {
-    const username = localStorage.getItem("username") || "";
+  const fetchOutlets = async () => {
+    try {
+      const username = localStorage.getItem("username") || "";
 
-    const data = await retryRequest(() =>
-      getOutletsForUser(username)
-    );
+      const data = await retryRequest(() => getOutletsForUser(username));
 
-    const mapped = data.map((out: any) => ({
-      id: out.OltCode,
-      name: out.OltName,
-    }));
+      const mapped = data.map((out: any) => ({
+        id: out.OltCode,
+        name: out.OltName,
+      }));
 
-    setOutlets(mapped);
+      setOutlets(mapped);
 
-    // ✅ Restore saved outlet
-    const savedOutlet =
-      localStorage.getItem("selectedOutlet");
+      // ✅ Restore saved outlet
+      const savedOutlet = localStorage.getItem("selectedOutlet");
 
-    if (savedOutlet) {
-      const parsed = JSON.parse(savedOutlet);
+      if (savedOutlet) {
+        const parsed = JSON.parse(savedOutlet);
 
-      setActiveOutlet(parsed.id);
+        setActiveOutlet(parsed.id);
 
-      outletDispatch({
-        type: "SET_OUTLET",
-        payload: parsed,
-      });
-    } else if (mapped.length > 0) {
-      // ✅ Default first outlet
-      setActiveOutlet(mapped[0].id);
+        outletDispatch({
+          type: "SET_OUTLET",
+          payload: parsed,
+        });
+      } else if (mapped.length > 0) {
+        // ✅ Default first outlet
+        setActiveOutlet(mapped[0].id);
 
-      outletDispatch({
-        type: "SET_OUTLET",
-        payload: mapped[0],
-      });
+        outletDispatch({
+          type: "SET_OUTLET",
+          payload: mapped[0],
+        });
 
-      localStorage.setItem(
-        "selectedOutlet",
-        JSON.stringify(mapped[0])
-      );
+        localStorage.setItem("selectedOutlet", JSON.stringify(mapped[0]));
+      }
+    } catch (err) {
+      console.error("Outlet fetch failed", err);
     }
-  } catch (err) {
-    console.error("Outlet fetch failed", err);
-  }
-};
+  };
   // ================= FETCH COMPANY =================
   const fetchCompanyInfo = async () => {
     try {
       if (companyInfo) return;
 
-      const res = await retryRequest(() =>
-        getcompanyinfobill()
-      );
+      const res = await retryRequest(() => getcompanyinfobill());
 
       if (res && res.Company_Name) {
         dispatch({
@@ -125,15 +115,21 @@ const fetchOutlets = async () => {
     try {
       setLoading(true);
 
-      const data = await retryRequest(() =>
-        getFoodCategories()
-      );
+      const data = await retryRequest(() => getFoodCategories());
 
-      const mapped: Category[] = data.map((cat: any) => ({
-        id: cat.CategoryId,
-        name: cat.Category.trim(),
-        image: cat.thumb || FALLBACK_IMAGE,
-      }));
+    const mapped: Category[] = [
+  {
+    id: 0,
+    name: "All",
+    image: FALLBACK_IMAGE,
+  },
+
+  ...data.map((cat: any) => ({
+    id: cat.CategoryId,
+    name: cat.Category.trim(),
+    image: cat.thumb || FALLBACK_IMAGE,
+  })),
+];
 
       setCategories(mapped);
 
@@ -156,25 +152,20 @@ const fetchOutlets = async () => {
 
   // ================= FETCH ITEMS =================
   useEffect(() => {
-    if (
-      activeCategory === null ||
-      activeOutlet === null
-    )
-      return;
+    if (activeCategory === null || activeOutlet === null) return;
 
     const fetchItems = async () => {
       try {
         setLoading(true);
 
         const data = await retryRequest(() =>
-          getFoodsImage(activeOutlet, activeCategory)
+          getFoodsImage(activeOutlet, activeCategory),
         );
 
-        const mappedItems: FoodItem[] =
-          data.foodmodellist.map((item) => ({
-            ...item,
-            thumb: item.thumb || FALLBACK_IMAGE,
-          }));
+        const mappedItems: FoodItem[] = data.foodmodellist.map((item) => ({
+          ...item,
+          thumb: item.thumb || FALLBACK_IMAGE,
+        }));
 
         setItems(mappedItems);
       } catch (err) {
@@ -197,7 +188,6 @@ const fetchOutlets = async () => {
   return (
     <CartProvider>
       <div className="min-h-screen flex bg-gray-100">
-        
         {/* ================= SIDEBAR ================= */}
         {location.pathname !== "/cart" &&
           location.pathname !== "/sales-report" &&
@@ -210,33 +200,27 @@ const fetchOutlets = async () => {
               outlets={outlets}
               activeOutlet={activeOutlet}
               onSelectOutlet={(outletId) => {
-  setActiveOutlet(outletId);
+                setActiveOutlet(outletId);
 
-  const outlet = outlets.find(
-    (o) => o.id === outletId
-  );
+                const outlet = outlets.find((o) => o.id === outletId);
 
-  if (outlet) {
-    outletDispatch({
-      type: "SET_OUTLET",
-      payload: outlet,
-    });
+                if (outlet) {
+                  outletDispatch({
+                    type: "SET_OUTLET",
+                    payload: outlet,
+                  });
 
-    localStorage.setItem(
-      "selectedOutlet",
-      JSON.stringify(outlet)
-    );
-  }
-}}
+                  localStorage.setItem(
+                    "selectedOutlet",
+                    JSON.stringify(outlet),
+                  );
+                }
+              }}
             />
           )}
 
         {/* ================= MAIN ================= */}
-        <main
-          className={`flex-1 ${
-            !isLogin ? "pt-[150px] md:pt-0" : ""
-          }`}
-        >
+        <main className={`flex-1 ${!isLogin ? "pt-[150px] md:pt-0" : ""}`}>
           <Routes>
             <Route path="/" element={<Loginpage />} />
 
@@ -246,47 +230,33 @@ const fetchOutlets = async () => {
                 loading ? (
                   <FoodLoader />
                 ) : (
-                 <ItemsPage
-  items={items.map((item) => ({
-    id: item.ItemCode,
-    title: item.ItemName,
-    image: item.thumb || FALLBACK_IMAGE,
-    description: item.description || "",
-    price:
-      item.CurrentPrize || item.ItemRate,
-    spicy: false,
-    catcode: item.CatCode,
-  }))}
-  activeOutlet={activeOutlet || 0}
-/>
+                  <ItemsPage
+                    items={items.map((item) => ({
+                      id: item.ItemCode,
+                      title: item.ItemName,
+                      image: item.thumb || FALLBACK_IMAGE,
+                      description: item.description || "",
+                      price: item.CurrentPrize || item.ItemRate,
+                      spicy: false,
+                      catcode: item.CatCode,
+                    }))}
+                    activeOutlet={activeOutlet || 0}
+                  />
                 )
               }
             />
 
-            <Route
-              path="/cart"
-              element={<CartPage />}
-            />
+            <Route path="/cart" element={<CartPage />} />
 
             <Route
               path="/sales-report"
-              element={
-                <SalesReport
-                  onBack={() =>
-                    navigate("/itemsPage")
-                  }
-                />
-              }
+              element={<SalesReport onBack={() => navigate("/itemsPage")} />}
             />
 
             <Route
               path="/item-sales-report"
               element={
-                <ItemSalesReport
-                  onBack={() =>
-                    navigate("/itemsPage")
-                  }
-                />
+                <ItemSalesReport onBack={() => navigate("/itemsPage")} />
               }
             />
           </Routes>

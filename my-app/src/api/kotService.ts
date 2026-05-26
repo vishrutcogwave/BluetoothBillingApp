@@ -218,3 +218,12 @@ export const getOutletsForUser = async (
 
   return response.data;
 };
+
+
+export const getOnlinePaymentTypes = async (): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/kot/OnlinePaymentType"
+  );
+
+  return response.data;
+};

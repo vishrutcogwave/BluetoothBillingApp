@@ -1,6 +1,8 @@
+// 
+
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { getChanceSheetReport } from "../api/kotService";
+import { getChanceSheetReport, getOutletsForUser } from "../api/kotService";
 import { printerService } from "../services/printerService";
 import PrinterSelector from "./PrinterSelector";
 
@@ -23,17 +25,48 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [printerConnected, setPrinterConnected] = useState(false);
   const [printing, setPrinting] = useState(false);
-
+const [summary, setSummary] = useState<any[]>([]);
   // ✅ Date States
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
+useEffect(() => {
+  const fetchOutlets = async () => {
+    try {
+      const username =
+        localStorage.getItem("username") || "";
 
+      // ✅ API CALL
+      const data = await getOutletsForUser(username);
+
+      console.log("Outlets 👉", data);
+
+      const mapped = data.map((out: any) => ({
+        id: out.OltCode,
+        name: out.OltName,
+      }));
+
+      setOutlets(mapped);
+
+      // ✅ DEFAULT ALL
+      const allIds = mapped
+        .map((o: any) => o.id)
+        .join(",");
+
+      setSelectedOutletIds(allIds);
+    } catch (err) {
+      console.error("Outlet fetch failed", err);
+    }
+  };
+
+  fetchOutlets();
+}, []);
+
+  const [outlets, setOutlets] = useState<any[]>([]);
+const [selectedOutletIds, setSelectedOutletIds] =
+  useState<string>("");
   // ✅ Get Outlet from localStorage
-  const storedOutlet = localStorage.getItem("selectedOutlet");
-  const selectedOutlet = storedOutlet
-    ? JSON.parse(storedOutlet)
-    : null;
+ 
 
   // ✅ Convert yyyy-mm-dd → MM/DD/YYYY
   const formatDate = (date: string) => {
@@ -50,7 +83,7 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
 
   // ✅ Fetch Report
   useEffect(() => {
-    if (!selectedOutlet?.id) return;
+  if (!selectedOutletIds) return;
 
     const fetchReport = async () => {
       try {
@@ -59,10 +92,11 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
         const data = await getChanceSheetReport(
           formatDate(startDate),
           formatDate(endDate),
-          selectedOutlet.id,
+        selectedOutletIds,
         );
 
-        setBills(data || []);
+      setBills(data?.ChanceSheet || []);
+      setSummary(data?.Summary || []);
       } catch (err) {
         setError("Failed to load report");
       } finally {
@@ -71,7 +105,7 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
     };
 
     fetchReport();
-  }, [startDate, endDate, selectedOutlet?.id]);
+}, [startDate, endDate, selectedOutletIds]);
 
   // ✅ Group bills by outlet
   const groupedBills = useMemo(() => {
@@ -157,7 +191,13 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       setPrinting(true);
 
       await printerService.printSalesReport({
-        outletName: selectedOutlet?.name ?? "",
+       outletName:
+  selectedOutletIds ===
+  outlets.map((o) => o.id).join(",")
+    ? "All Outlets"
+    : outlets.find(
+        (o) => String(o.id) === selectedOutletIds
+      )?.name ?? "",
         fromDate: startDate,
         toDate: endDate,
         bills: bills.map((b) => ({
@@ -246,35 +286,69 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       </h2>
 
       {/* DATE PICKERS */}
-      <div className="flex items-center gap-3 text-lg text-gray-700">
-        <div>
-          <label className="mr-1">From:</label>
+    <div className="flex flex-wrap items-center gap-3 text-lg text-gray-700">
+  {/* FROM */}
+  <div>
+    <label className="mr-1">From:</label>
 
-          <input
-            type="date"
-            value={startDate}
-            max={endDate}
-            onChange={(e) =>
-              setStartDate(e.target.value)
-            }
-            className="border rounded px-2 py-1 text-lg"
-          />
-        </div>
+    <input
+      type="date"
+      value={startDate}
+      max={endDate}
+      onChange={(e) =>
+        setStartDate(e.target.value)
+      }
+      className="border rounded px-2 py-1 text-lg"
+    />
+  </div>
 
-        <div>
-          <label className="mr-1">To:</label>
+  {/* TO */}
+  <div>
+    <label className="mr-1">To:</label>
 
-          <input
-            type="date"
-            value={endDate}
-            min={startDate}
-            onChange={(e) =>
-              setEndDate(e.target.value)
-            }
-            className="border rounded px-2 py-1 text-lg"
-          />
-        </div>
-      </div>
+    <input
+      type="date"
+      value={endDate}
+      min={startDate}
+      onChange={(e) =>
+        setEndDate(e.target.value)
+      }
+      className="border rounded px-2 py-1 text-lg"
+    />
+  </div>
+
+  {/* OUTLET */}
+  <div>
+    <label className="mr-1">Outlet:</label>
+
+    <select
+      value={selectedOutletIds}
+      onChange={(e) =>
+        setSelectedOutletIds(e.target.value)
+      }
+      className="border rounded px-2 py-1 text-lg"
+    >
+      {/* ALL */}
+      <option
+        value={outlets
+          .map((o) => o.id)
+          .join(",")}
+      >
+        All
+      </option>
+
+      {/* SINGLE OUTLETS */}
+      {outlets.map((outlet) => (
+        <option
+          key={outlet.id}
+          value={outlet.id}
+        >
+          {outlet.name}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 
       {/* TABLE */}
       <div className="overflow-x-auto">
@@ -344,47 +418,42 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
       </div>
 
       {/* TOTALS */}
-      <div className="mt-4 border rounded-md p-3 text-lg">
-        <div className="flex justify-between">
-          <span>GST :</span>
+    {/* SUMMARY */}
+<div className="mt-4 border rounded-md p-3 text-lg">
+  <div className="font-bold text-2xl mb-3">
+    SUMMARY
+  </div>
 
-          <span>
-            ₹ {gstAmount.toFixed(2)}
-          </span>
-        </div>
+  {summary.map((item, index) => (
+    <div
+      key={index}
+      className="flex justify-between"
+    >
+      <span>
+        {item.Particulars} :
+      </span>
 
-        <div className="flex justify-between">
-          <span>CASH :</span>
+      <span>
+        ₹ {Number(item.Amount).toFixed(2)}
+      </span>
+    </div>
+  ))}
 
-          <span>
-            ₹ {totalsByMethod.Cash.toFixed(2)}
-          </span>
-        </div>
+  <div className="flex justify-between font-bold border-t mt-2 pt-1 text-2xl">
+    <span>TOTAL :</span>
 
-        <div className="flex justify-between">
-          <span>CARD :</span>
-
-          <span>
-            ₹ {totalsByMethod.Card.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between">
-          <span>ONLINE :</span>
-
-          <span>
-            ₹ {totalsByMethod.Online.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between font-bold border-t mt-2 pt-1 text-2xl">
-          <span>TOTAL :</span>
-
-          <span>
-            ₹ {totalNetAmount.toFixed(2)}
-          </span>
-        </div>
-      </div>
+    <span>
+      ₹{" "}
+      {summary
+        .reduce(
+          (sum, item) =>
+            sum + Number(item.Amount || 0),
+          0,
+        )
+        .toFixed(2)}
+    </span>
+  </div>
+</div>
     </div>
 
     {/* PRINT */}

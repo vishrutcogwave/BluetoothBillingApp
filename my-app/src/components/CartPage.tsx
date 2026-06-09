@@ -315,46 +315,82 @@ const CartPage = () => {
     };
   };
 
-  const handlePrintBill = async (onlineTransactionId?: string) => {
+ const handlePrintBill = async (onlineTransactionId?: string) => {
+  try {
+    setLoading(true);
+
+    const transactionId =
+      paymentMode === "ONLINE" && isQRActive
+        ? onlineTransactionId
+        : generateTransactionId();
+
+    const payload = createBillPayload();
+
+    // ================= GET BILL =================
+    let res;
     try {
-      setLoading(true);
-
-      const transactionId =
-        paymentMode === "ONLINE" && isQRActive
-          ? onlineTransactionId
-          : generateTransactionId();
-
-      const payload = createBillPayload();
-      const res = await getBill(payload);
-
-      const payload2 = buildSubmitPayloadFromRes(items, res, transactionId);
-
-      const res2 = await submitBill(payload2);
-
-      console.log("Backend Bill 👉", res2);
-
-      // ✅ stop printing if submit fails
-      if (!res2 || res2.success !== true) {
-        alert("Bill submission failed");
-        return;
-      }
-
-      const res3 = await getbillnouseorderid(transactionId);
-
-      console.log("res3", res3);
-
-      await printerService.printBill(items, res, companyInfo, res3.billdetails);
-
-      dispatch({ type: "CLEAR_CART" });
-
-      navigate("/itemsPage");
+      res = await getBill(payload);
     } catch (err) {
-      console.error("Submit/Print error:", err);
-      alert("❌ Error while submitting or printing bill");
-    } finally {
-      setLoading(false);
+      alert("❌ getBill API failed");
+      console.error("getBill error:", err);
+      return;
     }
-  };
+
+    const payload2 = buildSubmitPayloadFromRes(
+      items,
+      res,
+      transactionId
+    );
+
+    // ================= SUBMIT BILL =================
+    let res2;
+    try {
+      res2 = await submitBill(payload2);
+    } catch (err) {
+      alert("❌ submitBill API failed");
+      console.error("submitBill error:", err);
+      return;
+    }
+
+    if (!res2 || res2.success !== true) {
+      alert("❌ Bill submission failed");
+      return;
+    }
+
+    // ================= GET BILL NO =================
+    let res3;
+    try {
+      res3 = await getbillnouseorderid(transactionId);
+    } catch (err) {
+      alert("❌ getbillnouseorderid API failed");
+      console.error("getbillnouseorderid error:", err);
+      return;
+    }
+
+    // ================= PRINT =================
+    try {
+      await printerService.printBill(
+        items,
+        res,
+        companyInfo,
+        res3.billdetails
+      );
+    } catch (err) {
+      alert("❌ Printer failed");
+      console.error("Printer error:", err);
+      return;
+    }
+
+    dispatch({ type: "CLEAR_CART" });
+
+    navigate("/itemsPage");
+  } catch (err) {
+    alert("❌ Unknown error");
+    console.error("Unknown error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
       setSelectedOnline(onlineTypes[0]);

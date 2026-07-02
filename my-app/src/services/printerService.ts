@@ -81,23 +81,43 @@ class PrinterService {
   /* =========================
      WRITE (SAFE)
      ========================= */
+async write(bytes: Uint8Array): Promise<void> {
 
-  async write(bytes: Uint8Array): Promise<void> {
-    const connected = await this.isConnected();
-    if (!connected) {
-      throw new Error("Printer not connected");
-    }
+  alert("WRITE START");
 
-    let binary = "";
-    for (const b of bytes) {
-      binary += String.fromCharCode(b);
-    }
+  const connected =
+    await this.isConnected();
 
-    return new Promise((resolve, reject) =>
-      bluetoothSerial.write(binary, resolve, reject)
-    );
+  alert(
+    "CONNECTED: " + connected
+  );
+
+  let binary = "";
+
+  for (const b of bytes) {
+    binary += String.fromCharCode(b);
   }
 
+  return new Promise((resolve, reject) =>
+    bluetoothSerial.write(
+      binary,
+
+      () => {
+        alert("✅ PRINT SUCCESS");
+        resolve();
+      },
+
+      (e:any) => {
+        alert(
+          "❌ PRINT FAILED: " +
+          JSON.stringify(e)
+        );
+
+        reject(e);
+      }
+    )
+  );
+}
 
 // async printBill(
 //   items: any[],
@@ -232,6 +252,12 @@ async printBill(
   company: any,
   billDetails?: BillDetails // ✅ new parameter
 ) {
+
+  const connected = await this.isConnected();
+
+if (!connected) {
+  await this.autoReconnect();
+}
   const ESC = 0x1b;
   const bytes: number[] = [];
   const WIDTH = 32;

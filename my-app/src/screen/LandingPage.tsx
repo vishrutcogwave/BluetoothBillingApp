@@ -49,8 +49,9 @@ const navi = useNavigate()
  const fetchCategories = async () => {
   try {
     setLoading(true);
+    const branchCode = localStorage.getItem("branch_code")||""
 
-    const data = await retryRequest(() => getFoodCategories());
+    const data = await retryRequest(() => getFoodCategories(branchCode));
 
     const mapped: Category[] = data.map((cat: any) => ({
       id: cat.CategoryId,

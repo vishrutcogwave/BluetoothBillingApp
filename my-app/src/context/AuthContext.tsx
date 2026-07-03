@@ -48,22 +48,35 @@ const login = async (username: string, password: string ) => {
     }
   );
 
-  const data = res.data;
+const response = res.data;
 
-  // Save token if API returns one
-  if (data.token) {
-    localStorage.setItem("access_token", data.token);
-  }
+const user = response?.data?.user;
 
-  // Or if it returns access_token
-  if (data.access_token) {
-    localStorage.setItem("access_token", data.access_token);
-  }
- localStorage.setItem("branch_code", branchCode);
-  // Save complete user response if needed
-  localStorage.setItem("user", JSON.stringify(data));
+if (!user) {
+  throw new Error("Invalid login response");
+}
 
-  setLoggedIn(true);
+if (user.token) {
+  localStorage.setItem("access_token", user.token);
+
+  const payload = JSON.parse(atob(user.token.split(".")[1]));
+
+  localStorage.setItem(
+    "token_expiry",
+    String(payload.exp * 1000)
+  );
+}
+
+localStorage.setItem("branch_code", branchCode);
+localStorage.setItem("user", JSON.stringify(user));
+
+// Optional: Save company info if you need it later
+localStorage.setItem(
+  "companyInfo",
+  JSON.stringify(response.data.companyInfo)
+);
+
+setLoggedIn(true);
 };
 
 const logout = () => {

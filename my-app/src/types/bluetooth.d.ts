@@ -9,12 +9,12 @@ export interface TaxItem {
 }
 
 export interface BillDetails {
-  Billno: string;
-  BillDate: string;
-  BillTime: string;
-  OutletName: string;
-  TokenNo: string;
-  OrderId: string;
+  billno: string;
+  billDate: string;
+  billTime: string;
+  outletName: string;
+  tokenNo: string;
+  orderId: string;
 }
 
 export interface BillResponse {

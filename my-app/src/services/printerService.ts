@@ -250,102 +250,188 @@ async printBill(
   items: any[],
   bill: BillResponse,
   company: any,
-  billDetails?: BillDetails // ✅ new parameter
+  billDetails?: BillDetails
 ) {
+  try {
+    console.log("Items:", items);
+    console.log("Bill:", bill);
+    console.log("Company:", company);
+    console.log("Bill Details:", billDetails);
 
-  const connected = await this.isConnected();
+    let connected = await this.isConnected();
 
-if (!connected) {
-  await this.autoReconnect();
-}
-  const ESC = 0x1b;
-  const bytes: number[] = [];
-  const WIDTH = 32;
+    if (!connected) {
+      const reconnected = await this.autoReconnect();
 
-  const enc = (t: string) =>
-    Array.from(new TextEncoder().encode(t));
+      if (!reconnected) {
+        alert("Printer not connected");
+        return;
+      }
+    }
 
-  const line = "-".repeat(WIDTH);
+    const ESC = 0x1b;
+    const bytes: number[] = [];
+    const WIDTH = 32;
 
-  const center = (t: string) =>
-    t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
+    const enc = (text: string) =>
+      Array.from(new TextEncoder().encode(text));
 
-  const row = (l: string, v: string) =>
-    `${l.padEnd(WIDTH - v.length)}${v}\n`;
+    const line = "-".repeat(WIDTH);
 
-  /* ================= HEADER ================= */
-  bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...enc(center(company?.Company_Name ?? "") + "\n"));
-  bytes.push(ESC, 0x45, 0x00);
+    const center = (text: string) =>
+      text.padStart(Math.floor((WIDTH + text.length) / 2)).padEnd(WIDTH);
 
-  if (company?.Address1) bytes.push(...enc(center(company.Address1) + "\n"));
-  if (company?.Address2) bytes.push(...enc(center(company.Address2) + "\n"));
-  if (company?.Phone_number)
-    bytes.push(...enc(center(`PH: ${company.Phone_number}`) + "\n"));
-  if (company?.Tin_no)
-    bytes.push(...enc(center(`GSTIN: ${company.Tin_no}`) + "\n"));
+    const row = (left: string, right: string) =>
+      `${left.padEnd(WIDTH - right.length)}${right}\n`;
 
-  bytes.push(...enc(line + "\n"));
+    /* ================= HEADER ================= */
 
-  /* ================= BILL INFO ================= */
-  bytes.push(ESC, 0x61, 0x00);
+    bytes.push(ESC, 0x61, 0x01);
+    bytes.push(ESC, 0x45, 0x01);
 
-  // Use billDetails parameter if available, else fallback to current date/time
- 
-  const billNo = billDetails?.Billno ?? "";
-  const outlet = billDetails?.OutletName ?? "";
-const billdate= billDetails?.BillDate??"";
-const billtime= billDetails?.BillTime??"";
+    bytes.push(...enc(center(company?.Company_Name ?? "") + "\n"));
 
+    bytes.push(ESC, 0x45, 0x00);
 
-  if (outlet) bytes.push(...enc(center(`Outlet: ${outlet}`) + "\n"));
-  if (billNo) bytes.push(...enc(`Bill No : ${billNo}\n`));
-  bytes.push(...enc(`Date    : ${billdate}\n`));
-  bytes.push(...enc(`Time    : ${billtime}\n`));
-  bytes.push(...enc(line + "\n"));
+    if (company?.Address1)
+      bytes.push(...enc(center(company.Address1) + "\n"));
 
-  /* ================= ITEMS ================= */
-  bytes.push(...enc("ITEM        QTY   RATE   AMT\n"));
-  bytes.push(...enc(line + "\n"));
+    if (company?.Address2)
+      bytes.push(...enc(center(company.Address2) + "\n"));
 
-  items.forEach((item) => {
-    const amt = item.price * item.qty;
-    const name = item.name.slice(0, 12).padEnd(12);
-    const qty = String(item.qty).padStart(3);
-    const rate = item.price.toFixed(2).padStart(7);
-    const total = amt.toFixed(2).padStart(7);
+    if (company?.Phone_number)
+      bytes.push(...enc(center(`PH : ${company.Phone_number}`) + "\n"));
 
-    bytes.push(...enc(`${name} ${qty} ${rate} ${total}\n`));
-  });
+    if (company?.Tin_no)
+      bytes.push(...enc(center(`GSTIN : ${company.Tin_no}`) + "\n"));
 
-  bytes.push(...enc(line + "\n"));
+    bytes.push(...enc(line + "\n"));
 
-  /* ================= TOTALS ================= */
-  bytes.push(...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`)));
+    /* ================= BILL INFO ================= */
 
-  bill.TaxList?.forEach((tax) => {
-    bytes.push(...enc(row(tax.TaxName, `Rs ${tax.TaxAmount.toFixed(2)}`)));
-  });
+    bytes.push(ESC, 0x61, 0x00);
 
-  if (bill.ServiceCharge > 0) {
-    bytes.push(...enc(row("Service Charge", `Rs ${bill.ServiceCharge.toFixed(2)}`)));
+    // Correct property names
+    const billNo = billDetails?.billno ?? "";
+    const outlet = billDetails?.outletName ?? "";
+    const billDate = billDetails?.billDate ?? "";
+    const billTime = billDetails?.billTime ?? "";
+
+    if (outlet)
+      bytes.push(...enc(`Outlet : ${outlet}\n`));
+
+    if (billNo)
+      bytes.push(...enc(`Bill No : ${billNo}\n`));
+
+    bytes.push(...enc(`Date     : ${billDate}\n`));
+    bytes.push(...enc(`Time     : ${billTime}\n`));
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= ITEMS ================= */
+
+    bytes.push(...enc("ITEM         QTY  RATE    AMT\n"));
+    bytes.push(...enc(line + "\n"));
+
+    items.forEach((item) => {
+      const qty = Number(item.qty || 0);
+      const rate = Number(item.price || 0);
+      const amount = qty * rate;
+
+      const name = String(item.name || "")
+        .substring(0, 12)
+        .padEnd(12);
+
+      bytes.push(
+        ...enc(
+          `${name}${qty
+            .toString()
+            .padStart(4)}${rate
+            .toFixed(2)
+            .padStart(8)}${amount
+            .toFixed(2)
+            .padStart(8)}\n`
+        )
+      );
+    });
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= TOTALS ================= */
+
+    bytes.push(
+      ...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`))
+    );
+
+    bill.TaxList?.forEach((tax) => {
+      bytes.push(
+        ...enc(
+          row(
+            tax.TaxName,
+            `Rs ${tax.TaxAmount.toFixed(2)}`
+          )
+        )
+      );
+    });
+
+    if (bill.ServiceCharge > 0) {
+      bytes.push(
+        ...enc(
+          row(
+            "Service Charge",
+            `Rs ${bill.ServiceCharge.toFixed(2)}`
+          )
+        )
+      );
+    }
+
+    if (bill.Discount > 0) {
+      bytes.push(
+        ...enc(
+          row(
+            "Discount",
+            `Rs ${bill.Discount.toFixed(2)}`
+          )
+        )
+      );
+    }
+
+    bytes.push(
+      ...enc(
+        row(
+          "Round Off",
+          `Rs ${bill.RoundOff.toFixed(2)}`
+        )
+      )
+    );
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= GRAND TOTAL ================= */
+
+    bytes.push(ESC, 0x45, 0x01);
+
+    bytes.push(
+      ...enc(
+        center(
+          `GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`
+        ) + "\n"
+      )
+    );
+
+    bytes.push(ESC, 0x45, 0x00);
+
+    bytes.push(...enc("\nThank You! Visit Again\n\n\n"));
+
+    console.log("Bytes Length:", bytes.length);
+
+    await this.write(new Uint8Array(bytes));
+
+    console.log("Print Success");
+  } catch (err) {
+    console.error("Print Error:", err);
+    alert("Print Error : " + JSON.stringify(err));
   }
-
-  if (bill.Discount > 0) {
-    bytes.push(...enc(row("Discount", `Rs ${bill.Discount.toFixed(2)}`)));
-  }
-
-  bytes.push(...enc(row("Round Off", `Rs ${bill.RoundOff.toFixed(2)}`)));
-  bytes.push(...enc(line + "\n"));
-
-  /* ================= GRAND TOTAL ================= */
-  bytes.push(ESC, 0x45, 0x01);
-  bytes.push(...enc(center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"));
-  bytes.push(ESC, 0x45, 0x00);
-
-  bytes.push(...enc("\nThank You! Visit Again 🙏\n\n\n"));
-
-  await this.write(new Uint8Array(bytes));
 }
 async printSalesReport(params: {
   outletName: string;

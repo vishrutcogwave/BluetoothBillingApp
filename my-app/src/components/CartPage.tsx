@@ -11,9 +11,8 @@ import {
   checkPaymentStatus,
   getBill,
   getbillnouseorderid,
-  getCardTypes,
   getOnlinePaymentTypes,
-  getonlineTypes,
+  getPaymentModeMaster,
   sendPaymentRequest,
   submitBill,
 } from "../api/kotService";
@@ -43,8 +42,9 @@ const CartPage = () => {
     "CASH",
   );
 
-  const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
-  const [cardTypes, setCardTypes] = useState<any[]>([]);
+const [_paymentModes, setPaymentModes] = useState<any[]>([]);
+const [cardTypes, setCardTypes] = useState<any[]>([]);
+const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [isQRActive, setIsQRActive] = useState(false);
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
@@ -79,40 +79,45 @@ const CartPage = () => {
     fetchBill();
   }, [items]);
 
-  useEffect(() => {
-    const fetchPaymentTypes = async () => {
-      try {
-        // ✅ CARD TYPES
-        const cardRes = await getCardTypes();
+useEffect(() => {
+  const fetchPaymentTypes = async () => {
+    try {
+      // QR Status
+      const qrRes = await getOnlinePaymentTypes();
+      setIsQRActive(qrRes?.IsQRActive === true);
+const branchcode = localStorage.getItem("branch_code")||""
+      // Payment Modes
+      const res = await getPaymentModeMaster(branchcode);
 
-        console.log("Cards 👉", cardRes);
+      setPaymentModes(res);
 
-        setCardTypes(Array.isArray(cardRes) ? cardRes : cardRes?.data || []);
+      const card = res.find(
+        (x: any) => x.modeType.toUpperCase() === "CARD"
+      );
 
-        // ✅ QR STATUS
-        const qrRes = await getOnlinePaymentTypes();
+      // const online = res.find(
+      //   (x: any) => x.modeType.toUpperCase() === "ONLINE"
+      // );
 
-        console.log("QR Status 👉", qrRes);
+      const upi = res.find(
+        (x: any) => x.modeType.toUpperCase() === "UPI"
+      );
 
-        setIsQRActive(qrRes?.IsQRActive === true);
+      setCardTypes(card?.subModes || []);
 
-        // ✅ ONLINE TYPES ONLY IF QR DISABLED
-        if (!qrRes?.IsQRActive) {
-          const onlineRes = await getonlineTypes();
-
-          console.log("Online 👉", onlineRes);
-
-          setOnlineTypes(
-            Array.isArray(onlineRes) ? onlineRes : onlineRes?.data || [],
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching payment types:", error);
+      // If QR is enabled, don't show UPI list
+      if (!qrRes?.IsQRActive) {
+        setOnlineTypes(upi?.subModes || []);
       }
-    };
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
+  if (companyInfo?.Branch_code) {
     fetchPaymentTypes();
-  }, []);
+  }
+}, [companyInfo]);
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
   };
@@ -121,28 +126,27 @@ const CartPage = () => {
     const random = Math.floor(Math.random() * 100000); // 5 digit random
     return `TXN-${timestamp}-${random}`;
   };
-  const fetchPaymentQR = async () => {
-    try {
-      const transactionId = generateTransactionId();
+const fetchPaymentQR = async () => {
+  try {
+    const transactionId = generateTransactionId();
 
-      const amount = Math.round((billData?.GrandTotal ?? total) * 100);
+    const amount = Math.round((billData?.GrandTotal ?? total) * 100);
 
-      const res = await sendPaymentRequest(amount, transactionId);
+    const res = await sendPaymentRequest(amount, transactionId);
 
-      console.log("Payment QR 👉", res);
+    if (res?.success) {
+      setPaymentData({
+        ...res.data,
+        localTransactionId: transactionId,
+      });
 
-      if (res?.success) {
-        setPaymentData({
-          ...res.data,
-          localTransactionId: transactionId,
-        });
-
-        startPaymentStatusPolling(transactionId);
-      }
-    } catch (err) {
-      console.error("QR Payment Error:", err);
+      // Start polling only after QR is generated successfully
+      startPaymentStatusPolling(transactionId);
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
   const startPaymentStatusPolling = (transactionId: string) => {
     if (paymentChecking) return;
 
@@ -172,7 +176,6 @@ const CartPage = () => {
   const mapCartToFoodPayload = (items: any[]) => {
     return items.map((item) => ({
       Id: item.id, // backend food ID
-      id: item.id,
       Food: item.name,
       code: "0",
       Price: item.price,
@@ -272,22 +275,23 @@ const CartPage = () => {
         CheckInNo: res?.CheckInNo ?? "0",
         KotMobileNo: "9845516950",
       },
-
-      Tax: {
-        TotalAmount: Number(tax?.TotalAmount ?? totalAmount),
-        TotalQty: Number(tax?.TotalQty ?? totalQty),
-        CGSTPer: Number(tax?.CGSTPer ?? 2.5),
-        CGSTAmt: Number(tax?.CGSTAmt ?? 0),
-        SGSTPer: Number(tax?.SGSTPer ?? 2.5),
-        SGSTAmt: Number(tax?.SGSTAmt ?? 0),
-        ServiceChargePer: Number(tax?.ServiceChargePer ?? 0),
-        ServiceCharge: Number(tax?.ServiceCharge ?? 0),
-        GrandTotal: Number(tax?.GrandTotal ?? totalAmount),
-        DiscountPer: Number(tax?.DiscountPer ?? 0),
-        Discount: Number(tax?.Discount ?? 0),
-        DiscountRemarks: null,
-        RoundOff: Number(tax?.RoundOff ?? 0),
-      },
+        Tax:tax,
+      // Tax: {
+      //   TotalAmount: Number(tax?.TotalAmount ?? totalAmount),
+      //   TotalQty: Number(tax?.TotalQty ?? totalQty),
+      //   CGSTPer: Number(tax?.CGSTPer ?? 2.5),
+      //   CGSTAmt: Number(tax?.CGSTAmt ?? 0),
+      //   SGSTPer: Number(tax?.SGSTPer ?? 2.5),
+      //   SGSTAmt: Number(tax?.SGSTAmt ?? 0),
+      //   ServiceChargePer: Number(tax?.ServiceChargePer ?? 0),
+      //   ServiceCharge: Number(tax?.ServiceCharge ?? 0),
+      //   GrandTotal: Number(tax?.GrandTotal ?? totalAmount),
+      //   DiscountPer: Number(tax?.DiscountPer ?? 0),
+      //   Discount: Number(tax?.Discount ?? 0),
+      //   DiscountRemarks: "",
+      //   RoundOff: Number(tax?.RoundOff ?? 0),
+        
+      // },
 
       BillingType: "ADD",
       SubBillingType: "C",
@@ -306,106 +310,167 @@ const CartPage = () => {
             paymentMode === "CASH"
               ? "CASH"
               : paymentMode === "CARD"
-                ? selectedCard?.CardType || ""
+                ? selectedCard?.subModeType || ""
                 : isQRActive
                   ? "QR"
-                  : selectedOnline?.CardType || "",
+                  : selectedOnline?.subModeType || "",
         },
       },
     };
   };
 
- const handlePrintBill = async (onlineTransactionId?: string) => {
-  try {
-    setLoading(true);
+//  const handlePrintBill = async (onlineTransactionId?: string) => {
+//   try {
+//     setLoading(true);
 
+//     const transactionId =
+//       paymentMode === "ONLINE" && isQRActive
+//         ? onlineTransactionId
+//         : generateTransactionId();
+
+//     const payload = createBillPayload();
+
+//     // ================= GET BILL =================
+//     let res;
+//     try {
+//       res = await getBill(payload);
+//     } catch (err) {
+//       alert("❌ getBill API failed");
+//       console.error("getBill error:", err);
+//       return;
+//     }
+
+//     const payload2 = buildSubmitPayloadFromRes(
+//       items,
+//       res,
+//       transactionId
+//     );
+
+//     // ================= SUBMIT BILL =================
+//     let res2;
+//     try {
+//       res2 = await submitBill(payload2);
+//     } catch (err) {
+//       alert("❌ submitBill API failed");
+//       console.error("submitBill error:", err);
+//       return;
+//     }
+
+//     if (!res2) {
+//       alert("❌ Bill submission failed");
+//       return;
+//     }
+
+//     // ================= GET BILL NO =================
+//     let res3;
+//     try {
+//       res3 = await getbillnouseorderid(transactionId);
+//     } catch (err) {
+//       alert("❌ getbillnouseorderid API failed");
+//       console.error("getbillnouseorderid error:", err);
+//       return;
+//     }
+
+//     // ================= PRINT =================
+//     try {
+//       await printerService.printBill(
+//         items,
+//         res,
+//         companyInfo,
+//         res3.billdetails
+//       );
+//     } catch (err) {
+//       alert("❌ Printer failed");
+//       console.error("Printer error:", err);
+//       return;
+//     }
+
+//     dispatch({ type: "CLEAR_CART" });
+
+//     navigate("/itemsPage");
+//   } catch (err) {
+//     alert("❌ Unknown error");
+//     console.error("Unknown error:", err);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+ const handlePrintBill = async (onlineTransactionId?: string) => {
+  setLoading(true);
+
+  try {
     const transactionId =
       paymentMode === "ONLINE" && isQRActive
         ? onlineTransactionId
         : generateTransactionId();
 
-    const payload = createBillPayload();
-
     // ================= GET BILL =================
-    let res;
-    try {
-      res = await getBill(payload);
-    } catch (err) {
-      alert("❌ getBill API failed");
-      console.error("getBill error:", err);
+    const billResponse = await getBill(createBillPayload());
+
+    console.log("✅ GetBill Response:", billResponse);
+
+    if (!billResponse) {
+      alert("Failed to get bill.");
       return;
     }
 
-    const payload2 = buildSubmitPayloadFromRes(
-      items,
-      res,
+    // ================= BUILD SUBMIT PAYLOAD =================
+    const submitPayload = buildSubmitPayloadFromRes(
+      billResponse,
+      billResponse,
       transactionId
     );
 
+    console.log("📤 Submit Payload:", submitPayload);
+debugger
     // ================= SUBMIT BILL =================
-    let res2;
-    try {
-      res2 = await submitBill(payload2);
-    } catch (err) {
-      alert("❌ submitBill API failed");
-      console.error("submitBill error:", err);
-      return;
-    }
+    const submitResponse = await submitBill(submitPayload);
 
-    if (!res2 || res2.success !== true) {
-      alert("❌ Bill submission failed");
-      return;
-    }
+    console.log("✅ SubmitBill Response:", submitResponse);
 
-    // ================= GET BILL NO =================
-    let res3;
-    try {
-      res3 = await getbillnouseorderid(transactionId);
-    } catch (err) {
-      alert("❌ getbillnouseorderid API failed");
-      console.error("getbillnouseorderid error:", err);
+    if (!submitResponse) {
+      alert("Bill submission failed");
       return;
     }
+const Branchcode =localStorage.getItem("branch_code") || ""
+    // ================= GET BILL NUMBER =================
+    const billNoResponse = await getbillnouseorderid(transactionId,Number(selectedOutlet?.id || 0),Branchcode);
+
+    console.log("✅ Bill No Response:", billNoResponse);
 
     // ================= PRINT =================
-    try {
-      await printerService.printBill(
-        items,
-        res,
-        companyInfo,
-        res3.billdetails
-      );
-    } catch (err) {
-      alert("❌ Printer failed");
-      console.error("Printer error:", err);
-      return;
-    }
+    await printerService.printBill(
+      items,
+      billResponse,
+      companyInfo,
+      billNoResponse?.billdetails
+    );
 
     dispatch({ type: "CLEAR_CART" });
 
     navigate("/itemsPage");
-  } catch (err) {
-    alert("❌ Unknown error");
-    console.error("Unknown error:", err);
+  } catch (err: any) {
+    console.error("Handle Print Error:", err);
+
+    if (err?.response) {
+      console.log("Status:", err.response.status);
+      console.log("Response:", err.response.data);
+    }
+
+    alert(err?.response?.data?.message || "Something went wrong");
   } finally {
     setLoading(false);
   }
 };
-  useEffect(() => {
+
+
+useEffect(() => {
     if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
       setSelectedOnline(onlineTypes[0]);
     }
   }, [paymentMode, onlineTypes]);
 
-  useEffect(() => {
-    if (
-      paymentMode === "ONLINE" &&
-      isQRActive &&
-      (billData?.GrandTotal ?? total) > 0
-    ) {
-      fetchPaymentQR();
-    }
-  }, [paymentMode, billData, isQRActive]);
+
   return (
     <>
       {activePage === "sales" ? (
@@ -501,7 +566,17 @@ const CartPage = () => {
                   {["CASH", "CARD", "ONLINE"].map((mode) => (
                     <button
                       key={mode}
-                      onClick={() => setPaymentMode(mode as any)}
+                     onClick={async () => {
+  setPaymentMode(mode as any);
+
+  if (
+    mode === "ONLINE" &&
+    isQRActive &&
+    (billData?.GrandTotal ?? total) > 0
+  ) {
+    await fetchPaymentQR();
+  }
+}}
                       className={`py-2 rounded-lg border text-sm font-medium transition 
           ${
             paymentMode === mode
@@ -524,16 +599,16 @@ const CartPage = () => {
                     ) : (
                       onlineTypes.map((online) => (
                         <button
-                          key={online.CardId}
+                          key={online.subModeId}
                           onClick={() => setSelectedOnline(online)}
                           className={`py-2 rounded-lg border text-sm transition 
               ${
-                selectedOnline?.CardId === online.CardId
+                selectedOnline?.subModeId === online.subModeId
                   ? "bg-purple-600 text-white border-purple-600"
                   : "bg-white"
               }`}
                         >
-                          {online.CardType}
+                          {online.subModeType}
                         </button>
                       ))
                     )}
@@ -549,16 +624,16 @@ const CartPage = () => {
                     ) : (
                       cardTypes.map((card) => (
                         <button
-                          key={card.CardId}
+                          key={card.subModeId}
                           onClick={() => setSelectedCard(card)}
                           className={`py-2 rounded-lg border text-sm transition
           ${
-            selectedCard?.CardId === card.CardId
+            selectedCard?.subModeId === card.subModeId
               ? "bg-green-600 text-white border-green-600"
               : "bg-white"
           }`}
                         >
-                          {card.CardType}
+                          {card.subModeType}
                         </button>
                       ))
                     )}
@@ -606,16 +681,16 @@ const CartPage = () => {
                         ) : (
                           onlineTypes.map((online) => (
                             <button
-                              key={online.CardId}
+                              key={online.subModeId}
                               onClick={() => setSelectedOnline(online)}
                               className={`py-2 rounded-lg border text-sm transition
             ${
-              selectedOnline?.CardId === online.CardId
+              selectedOnline?.subModeId === online.subModeId
                 ? "bg-purple-600 text-white border-purple-600"
                 : "bg-white"
             }`}
                             >
-                              {online.CardType}
+                              {online.subModeType}
                             </button>
                           ))
                         )}
@@ -673,7 +748,7 @@ const CartPage = () => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {!printerConnected ? (
+                  {printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />

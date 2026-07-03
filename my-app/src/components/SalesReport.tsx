@@ -88,11 +88,12 @@ const [selectedOutletIds, setSelectedOutletIds] =
     const fetchReport = async () => {
       try {
         setLoading(true);
-
+const branchcode = localStorage.getItem("branch_code") || ""
         const data = await getChanceSheetReport(
           formatDate(startDate),
           formatDate(endDate),
         selectedOutletIds,
+        branchcode
         );
 
       setBills(data?.ChanceSheet || []);

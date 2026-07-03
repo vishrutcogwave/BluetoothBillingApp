@@ -1,3 +1,5 @@
+
+
 import { useEffect, useState } from "react";
 import { FALLBACK_IMAGE, type Category } from "../utils";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
@@ -114,8 +116,8 @@ export default function LandingPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-
-      const data = await retryRequest(() => getFoodCategories());
+    const branch_code = localStorage.getItem("branch_code") || ""
+      const data = await retryRequest(() => getFoodCategories(branch_code));
 
     const mapped: Category[] = [
   {
@@ -157,9 +159,9 @@ export default function LandingPage() {
     const fetchItems = async () => {
       try {
         setLoading(true);
-
+const  Branchcode = localStorage.getItem("branch_code")||"  "
         const data = await retryRequest(() =>
-          getFoodsImage(activeOutlet, activeCategory),
+          getFoodsImage(activeOutlet, activeCategory,"0",Branchcode),
         );
 
         const mappedItems: FoodItem[] = data.foodmodellist.map((item) => ({

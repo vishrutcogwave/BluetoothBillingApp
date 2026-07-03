@@ -164,12 +164,13 @@ const ItemsPage: React.FC<ItemsPageProps> = ({
           setSearchedItems(items);
           return;
         }
-
+const Branchcode=localStorage.getItem("branch_code") ||""
         // ✅ API SEARCH
         const data = await getFoodsImage(
           activeOutlet,
           0,
-          searchTerm
+          searchTerm,
+          Branchcode
         );
 
  const mapped = data.foodmodellist.map(

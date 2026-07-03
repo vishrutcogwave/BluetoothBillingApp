@@ -17,22 +17,33 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   // 🔹 Check BASE_URL on first load
-  useEffect(() => {
-    const baseUrl = localStorage.getItem("BASE_URL");
-    console.log("Checking BASE_URL:", baseUrl);
-    if (!baseUrl) setBaseUrlMissing(true);
+useEffect(() => {
+  const baseUrl = localStorage.getItem("BASE_URL");
+  console.log("Checking BASE_URL:", baseUrl);
 
+  if (!baseUrl) {
+    setBaseUrlMissing(true);
+    return;
+  }
 
-    const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("access_token");
   const expiry = localStorage.getItem("token_expiry");
 
-  if (token && expiry && Date.now() < Number(expiry)) {
-    navigate("/itemsPage");
-  } else {
+  console.log("Saved Token:", token);
+  console.log("Saved Expiry:", expiry);
+
+  if (token && expiry) {
+    if (Date.now() < Number(expiry)) {
+      navigate("/itemsPage", { replace: true });
+      return;
+    }
+
+    // Token expired
     localStorage.removeItem("access_token");
     localStorage.removeItem("token_expiry");
+    localStorage.removeItem("user");
   }
-  }, []);
+}, [navigate]);
 
   // 🔹 Fetch outlets
 

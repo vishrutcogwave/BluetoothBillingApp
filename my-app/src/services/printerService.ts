@@ -258,6 +258,18 @@ async printBill(
     console.log("Company:", company);
     console.log("Bill Details:", billDetails);
 
+      // ================= ENSURE PRINTER CONNECTION =================
+    if (!(await this.isConnected())) {
+      const paired = await this.getPairedDevices();
+
+      if (paired.length === 0) {
+        throw new Error("No paired printer found");
+      }
+
+      await this.connect(paired[0].address);
+    }
+
+
     const ESC = 0x1b;
     const bytes: number[] = [];
     const WIDTH = 32;

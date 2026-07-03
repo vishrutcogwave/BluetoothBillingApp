@@ -1,3 +1,9 @@
+
+
+
+
+
+
 import type { BillDetails, BillResponse } from "../types/bluetooth";
 
 declare const bluetoothSerial: any;
@@ -81,23 +87,43 @@ class PrinterService {
   /* =========================
      WRITE (SAFE)
      ========================= */
+async write(bytes: Uint8Array): Promise<void> {
 
-  async write(bytes: Uint8Array): Promise<void> {
-    const connected = await this.isConnected();
-    if (!connected) {
-      throw new Error("Printer not connected");
-    }
+  alert("WRITE START");
 
-    let binary = "";
-    for (const b of bytes) {
-      binary += String.fromCharCode(b);
-    }
+  const connected =
+    await this.isConnected();
 
-    return new Promise((resolve, reject) =>
-      bluetoothSerial.write(binary, resolve, reject)
-    );
+  alert(
+    "CONNECTED: " + connected
+  );
+
+  let binary = "";
+
+  for (const b of bytes) {
+    binary += String.fromCharCode(b);
   }
 
+  return new Promise((resolve, reject) =>
+    bluetoothSerial.write(
+      binary,
+
+      () => {
+        alert("✅ PRINT SUCCESS");
+        resolve();
+      },
+
+      (e:any) => {
+        alert(
+          "❌ PRINT FAILED: " +
+          JSON.stringify(e)
+        );
+
+        reject(e);
+      }
+    )
+  );
+}
 
 // async printBill(
 //   items: any[],
@@ -230,96 +256,186 @@ async printBill(
   items: any[],
   bill: BillResponse,
   company: any,
-  billDetails?: BillDetails // ✅ new parameter
+  billDetails?: BillDetails
 ) {
-  const ESC = 0x1b;
-  const bytes: number[] = [];
-  const WIDTH = 32;
+  try {
+    console.log("Items:", items);
+    console.log("Bill:", bill);
+    console.log("Company:", company);
+    console.log("Bill Details:", billDetails);
 
-  const enc = (t: string) =>
-    Array.from(new TextEncoder().encode(t));
+      // ================= ENSURE PRINTER CONNECTION =================
+    if (!(await this.isConnected())) {
+      const paired = await this.getPairedDevices();
 
-  const line = "-".repeat(WIDTH);
+      if (paired.length === 0) {
+        throw new Error("No paired printer found");
+      }
 
-  const center = (t: string) =>
-    t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
-
-  const row = (l: string, v: string) =>
-    `${l.padEnd(WIDTH - v.length)}${v}\n`;
-
-  /* ================= HEADER ================= */
-  bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...enc(center(company?.Company_Name ?? "") + "\n"));
-  bytes.push(ESC, 0x45, 0x00);
-
-  if (company?.Address1) bytes.push(...enc(center(company.Address1) + "\n"));
-  if (company?.Address2) bytes.push(...enc(center(company.Address2) + "\n"));
-  if (company?.Phone_number)
-    bytes.push(...enc(center(`PH: ${company.Phone_number}`) + "\n"));
-  if (company?.Tin_no)
-    bytes.push(...enc(center(`GSTIN: ${company.Tin_no}`) + "\n"));
-
-  bytes.push(...enc(line + "\n"));
-
-  /* ================= BILL INFO ================= */
-  bytes.push(ESC, 0x61, 0x00);
-
-  // Use billDetails parameter if available, else fallback to current date/time
- 
-  const billNo = billDetails?.Billno ?? "";
-  const outlet = billDetails?.OutletName ?? "";
-const billdate= billDetails?.BillDate??"";
-const billtime= billDetails?.BillTime??"";
+      await this.connect(paired[0].address);
+    }
 
 
-  if (outlet) bytes.push(...enc(center(`Outlet: ${outlet}`) + "\n"));
-  if (billNo) bytes.push(...enc(`Bill No : ${billNo}\n`));
-  bytes.push(...enc(`Date    : ${billdate}\n`));
-  bytes.push(...enc(`Time    : ${billtime}\n`));
-  bytes.push(...enc(line + "\n"));
+    const ESC = 0x1b;
+    const bytes: number[] = [];
+    const WIDTH = 32;
 
-  /* ================= ITEMS ================= */
-  bytes.push(...enc("ITEM        QTY   RATE   AMT\n"));
-  bytes.push(...enc(line + "\n"));
+    const enc = (text: string) =>
+      Array.from(new TextEncoder().encode(text));
 
-  items.forEach((item) => {
-    const amt = item.price * item.qty;
-    const name = item.name.slice(0, 12).padEnd(12);
-    const qty = String(item.qty).padStart(3);
-    const rate = item.price.toFixed(2).padStart(7);
-    const total = amt.toFixed(2).padStart(7);
+    const line = "-".repeat(WIDTH);
 
-    bytes.push(...enc(`${name} ${qty} ${rate} ${total}\n`));
-  });
+    const center = (text: string) =>
+      text.padStart((WIDTH + text.length) / 2).padEnd(WIDTH);
 
-  bytes.push(...enc(line + "\n"));
+    const row = (left: string, right: string) =>
+      `${left.padEnd(WIDTH - right.length)}${right}\n`;
 
-  /* ================= TOTALS ================= */
-  bytes.push(...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`)));
+    /* ================= HEADER ================= */
 
-  bill.TaxList?.forEach((tax) => {
-    bytes.push(...enc(row(tax.TaxName, `Rs ${tax.TaxAmount.toFixed(2)}`)));
-  });
+    bytes.push(ESC, 0x61, 0x01);
+    bytes.push(ESC, 0x45, 0x01);
 
-  if (bill.ServiceCharge > 0) {
-    bytes.push(...enc(row("Service Charge", `Rs ${bill.ServiceCharge.toFixed(2)}`)));
+    bytes.push(...enc(center(company?.Company_Name ?? "") + "\n"));
+
+    bytes.push(ESC, 0x45, 0x00);
+
+    if (company?.Address1)
+      bytes.push(...enc(center(company.Address1) + "\n"));
+
+    if (company?.Address2)
+      bytes.push(...enc(center(company.Address2) + "\n"));
+
+    if (company?.Phone_number)
+      bytes.push(...enc(center(`PH : ${company.Phone_number}`) + "\n"));
+
+    if (company?.Tin_no)
+      bytes.push(...enc(center(`GSTIN : ${company.Tin_no}`) + "\n"));
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= BILL INFO ================= */
+
+    bytes.push(ESC, 0x61, 0x00);
+
+const billNo = billDetails?.billno ?? "";
+const outlet = billDetails?.outletName ?? "";
+const billDate = billDetails?.billDate ?? "";
+const billTime = billDetails?.billTime ?? "";
+    if (outlet)
+      bytes.push(...enc(`Outlet : ${outlet}\n`));
+
+    if (billNo)
+      bytes.push(...enc(`Bill No : ${billNo}\n`));
+
+    bytes.push(...enc(`Date     : ${billDate}\n`));
+    bytes.push(...enc(`Time     : ${billTime}\n`));
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= ITEMS ================= */
+
+    bytes.push(...enc("ITEM         QTY  RATE    AMT\n"));
+    bytes.push(...enc(line + "\n"));
+
+    items.forEach((item) => {
+      const qty = Number(item.qty || 0);
+      const rate = Number(item.price || 0);
+      const amount = qty * rate;
+
+      const name = String(item.name || "")
+        .substring(0, 12)
+        .padEnd(12);
+
+      bytes.push(
+        ...enc(
+          `${name}${qty
+            .toString()
+            .padStart(4)}${rate
+            .toFixed(2)
+            .padStart(8)}${amount
+            .toFixed(2)
+            .padStart(8)}\n`
+        )
+      );
+    });
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= TOTALS ================= */
+
+    bytes.push(
+      ...enc(row("Subtotal", `Rs ${bill.TotalAmount.toFixed(2)}`))
+    );
+
+    bill.TaxList?.forEach((tax) => {
+      bytes.push(
+        ...enc(
+          row(
+            tax.TaxName,
+            `Rs ${tax.TaxAmount.toFixed(2)}`
+          )
+        )
+      );
+    });
+
+    if (bill.ServiceCharge > 0) {
+      bytes.push(
+        ...enc(
+          row(
+            "Service Charge",
+            `Rs ${bill.ServiceCharge.toFixed(2)}`
+          )
+        )
+      );
+    }
+
+    if (bill.Discount > 0) {
+      bytes.push(
+        ...enc(
+          row(
+            "Discount",
+            `Rs ${bill.Discount.toFixed(2)}`
+          )
+        )
+      );
+    }
+
+    bytes.push(
+      ...enc(
+        row(
+          "Round Off",
+          `Rs ${bill.RoundOff.toFixed(2)}`
+        )
+      )
+    );
+
+    bytes.push(...enc(line + "\n"));
+
+    /* ================= GRAND TOTAL ================= */
+
+    bytes.push(ESC, 0x45, 0x01);
+
+    bytes.push(
+      ...enc(
+        center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"
+      )
+    );
+
+    bytes.push(ESC, 0x45, 0x00);
+
+    bytes.push(...enc("\nThank You! Visit Again 🙏\n\n\n"));
+
+    console.log("Bytes Length:", bytes.length);
+
+    // Let write() handle connection checking
+    await this.write(new Uint8Array(bytes));
+
+    console.log("Print Success");
+  } catch (err) {
+    console.error("Print Error:", err);
+    alert("Print Error : " + JSON.stringify(err));
   }
-
-  if (bill.Discount > 0) {
-    bytes.push(...enc(row("Discount", `Rs ${bill.Discount.toFixed(2)}`)));
-  }
-
-  bytes.push(...enc(row("Round Off", `Rs ${bill.RoundOff.toFixed(2)}`)));
-  bytes.push(...enc(line + "\n"));
-
-  /* ================= GRAND TOTAL ================= */
-  bytes.push(ESC, 0x45, 0x01);
-  bytes.push(...enc(center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"));
-  bytes.push(ESC, 0x45, 0x00);
-
-  bytes.push(...enc("\nThank You! Visit Again 🙏\n\n\n"));
-
-  await this.write(new Uint8Array(bytes));
 }
 async printSalesReport(params: {
   outletName: string;
@@ -329,13 +445,11 @@ async printSalesReport(params: {
     BillNo: string;
     Grand: number;
   }[];
-  totals: {
-    gst: number;
-    cash: number;
-    card: number;
-    online: number;
-    total: number;
-  };
+  summary: {
+    Particulars: string;
+    Amount: number;
+  }[];
+  total: number;
 }) {
   const ESC = 0x1b;
   const WIDTH = 32;
@@ -354,49 +468,117 @@ async printSalesReport(params: {
 
   /* ================= HEADER ================= */
   bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...enc(center("SALES REPORT") + "\n"));
+
+  bytes.push(
+    ...enc(center("SALES REPORT") + "\n")
+  );
+
   bytes.push(ESC, 0x45, 0x00);
 
-  bytes.push(...enc(center(`Outlet: ${params.outletName}`) + "\n"));
+  bytes.push(
+    ...enc(
+      center(
+        `Outlet: ${params.outletName}`,
+      ) + "\n",
+    ),
+  );
+
   bytes.push(...enc(line + "\n"));
 
-  /* ================= DATE RANGE ================= */
+  /* ================= DATE ================= */
   bytes.push(ESC, 0x61, 0x00);
-  bytes.push(...enc(`From : ${params.fromDate}\n`));
-  bytes.push(...enc(`To   : ${params.toDate}\n`));
+
+  bytes.push(
+    ...enc(`From : ${params.fromDate}\n`),
+  );
+
+  bytes.push(
+    ...enc(`To   : ${params.toDate}\n`),
+  );
+
   bytes.push(...enc(line + "\n"));
 
-  /* ================= BILL SUMMARY ================= */
-  bytes.push(...enc("BILL NO           AMT\n"));
+  /* ================= BILLS ================= */
+  bytes.push(
+    ...enc("BILL NO           AMT\n"),
+  );
+
   bytes.push(...enc(line + "\n"));
 
   params.bills.forEach((b) => {
     const billNo = b.BillNo.padEnd(16);
-    const amt = b.Grand.toFixed(2).padStart(14);
-    bytes.push(...enc(`${billNo}${amt}\n`));
+
+    const amt = b.Grand
+      .toFixed(2)
+      .padStart(14);
+
+    bytes.push(
+      ...enc(`${billNo}${amt}\n`),
+    );
   });
 
   bytes.push(...enc(line + "\n"));
 
-  /* ================= TOTALS ================= */
-  bytes.push(...enc(row("GST", `Rs ${params.totals.gst.toFixed(2)}`)));
-  bytes.push(...enc(row("CASH", `Rs ${params.totals.cash.toFixed(2)}`)));
-  bytes.push(...enc(row("CARD", `Rs ${params.totals.card.toFixed(2)}`)));
-  bytes.push(...enc(row("ONLINE", `Rs ${params.totals.online.toFixed(2)}`)));
+  /* ================= SUMMARY ================= */
+  bytes.push(
+    ESC,
+    0x45,
+    0x01,
+  );
+
+  bytes.push(...enc("SUMMARY\n"));
+
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
 
   bytes.push(...enc(line + "\n"));
 
-  bytes.push(ESC, 0x45, 0x01);
+  params.summary.forEach((s) => {
+    bytes.push(
+      ...enc(
+        row(
+          s.Particulars || "CARD",
+          `Rs ${s.Amount.toFixed(2)}`,
+        ),
+      ),
+    );
+  });
+
+  bytes.push(...enc(line + "\n"));
+
+  /* ================= TOTAL ================= */
+  bytes.push(
+    ESC,
+    0x45,
+    0x01,
+  );
+
   bytes.push(
     ...enc(
-      center(`TOTAL : Rs ${params.totals.total.toFixed(2)}`) + "\n"
-    )
+      center(
+        `TOTAL : Rs ${params.total.toFixed(
+          2,
+        )}`,
+      ) + "\n",
+    ),
   );
-  bytes.push(ESC, 0x45, 0x00);
 
-  bytes.push(...enc("\nThank You 🙏\n\n\n"));
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
 
-  await this.write(new Uint8Array(bytes));
+  bytes.push(
+    ...enc("\nThank You 🙏\n\n\n"),
+  );
+
+  await this.write(
+    new Uint8Array(bytes),
+  );
 }
 
 async printItemSalesReport(params: {
@@ -422,58 +604,155 @@ async printItemSalesReport(params: {
   const center = (t: string) =>
     t.padStart((WIDTH + t.length) / 2).padEnd(WIDTH);
 
-  /* ================= HEADER ================= */
-  bytes.push(ESC, 0x61, 0x01, ESC, 0x45, 0x01);
-  bytes.push(...enc(center("ITEM SALES REPORT") + "\n"));
-  bytes.push(ESC, 0x45, 0x00);
+  const row = (
+    l: string,
+    v: string,
+  ) =>
+    `${l.padEnd(
+      WIDTH - v.length,
+    )}${v}\n`;
 
-  bytes.push(...enc(center(`Outlet: ${params.outletName}`) + "\n"));
+  /* ================= HEADER ================= */
+  bytes.push(
+    ESC,
+    0x61,
+    0x01,
+    ESC,
+    0x45,
+    0x01,
+  );
+
+  bytes.push(
+    ...enc(
+      center(
+        "ITEM SALES REPORT",
+      ) + "\n",
+    ),
+  );
+
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
+
+  bytes.push(
+    ...enc(
+      center(
+        `Outlet: ${params.outletName}`,
+      ) + "\n",
+    ),
+  );
+
   bytes.push(...enc(line + "\n"));
 
   /* ================= DATE ================= */
-  bytes.push(ESC, 0x61, 0x00);
-  bytes.push(...enc(`From : ${params.fromDate}\n`));
-  bytes.push(...enc(`To   : ${params.toDate}\n`));
+  bytes.push(
+    ESC,
+    0x61,
+    0x00,
+  );
+
+  bytes.push(
+    ...enc(`From : ${params.fromDate}\n`),
+  );
+
+  bytes.push(
+    ...enc(`To   : ${params.toDate}\n`),
+  );
+
   bytes.push(...enc(line + "\n"));
 
-  /* ================= HEADER ROW ================= */
-  bytes.push(...enc("ITEM        QTY   RATE   AMT\n"));
+  /* ================= TABLE HEADER ================= */
+  bytes.push(
+    ...enc(
+      "ITEM          QTY    AMT\n",
+    ),
+  );
+
   bytes.push(...enc(line + "\n"));
 
   /* ================= ITEMS ================= */
   params.items.forEach((item) => {
-    const name = item.ItemName.replace("\n", " ")
+    const name = item.ItemName
+      .replace("\n", " ")
       .slice(0, 12)
       .padEnd(12);
 
-    const qty = String(item.Qty).padStart(3);
-    const rate = item.Rate.toFixed(2).padStart(7);
-    const total = item.Total.toFixed(2).padStart(7);
+    const qty = String(
+      item.Qty,
+    ).padStart(4);
 
-    bytes.push(...enc(`${name} ${qty} ${rate} ${total}\n`));
+    const total = item.Total
+      .toFixed(2)
+      .padStart(10);
+
+    bytes.push(
+      ...enc(
+        `${name}${qty}${total}\n`,
+      ),
+    );
   });
 
   bytes.push(...enc(line + "\n"));
 
-  /* ================= GRAND TOTAL ================= */
-  const grandTotal = params.items.reduce(
-    (sum, i) => sum + i.Total,
-    0
+  /* ================= SUMMARY ================= */
+  const totalQty = params.items.reduce(
+    (sum, i) => sum + Number(i.Qty || 0),
+    0,
   );
 
-  bytes.push(ESC, 0x45, 0x01);
+  const grandTotal =
+    params.items.reduce(
+      (sum, i) =>
+        sum + Number(i.Total || 0),
+      0,
+    );
+
   bytes.push(
-    ...enc(center(`TOTAL : Rs ${grandTotal.toFixed(2)}`) + "\n")
+    ...enc(
+      row(
+        "TOTAL QTY",
+        String(totalQty),
+      ),
+    ),
   );
-  bytes.push(ESC, 0x45, 0x00);
 
-  bytes.push(...enc("\nThank You 🙏\n\n\n"));
+  bytes.push(...enc(line + "\n"));
 
-  await this.write(new Uint8Array(bytes));
+  /* ================= TOTAL ================= */
+  bytes.push(
+    ESC,
+    0x45,
+    0x01,
+  );
+
+  bytes.push(
+    ...enc(
+      center(
+        `TOTAL : Rs ${grandTotal.toFixed(
+          2,
+        )}`,
+      ) + "\n",
+    ),
+  );
+
+  bytes.push(
+    ESC,
+    0x45,
+    0x00,
+  );
+
+  bytes.push(
+    ...enc("\nThank You 🙏\n\n\n"),
+  );
+
+  await this.write(
+    new Uint8Array(bytes),
+  );
 }
-
-
 
 }
 
 export const printerService = new PrinterService();
+

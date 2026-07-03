@@ -1,3 +1,7 @@
+
+
+
+
 import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { Trash2, ArrowLeft } from "lucide-react";
@@ -8,10 +12,12 @@ import PrinterSelector from "../components/PrinterSelector";
 import { useOutlet } from "../context/OutletContext";
 
 import {
+  checkPaymentStatus,
   getBill,
   getbillnouseorderid,
-  getCardTypes,
-  getonlineTypes,
+  getOnlinePaymentTypes,
+  getPaymentModeMaster,
+  sendPaymentRequest,
   submitBill,
 } from "../api/kotService";
 import { useCompany } from "../context/CompanyContext";
@@ -21,7 +27,6 @@ import { QRCodeCanvas } from "qrcode.react";
 /* =========================
    TAX CALCULATION
    ========================= */
-   
 
 const CartPage = () => {
   const { items, total, dispatch } = useCart();
@@ -41,21 +46,25 @@ const CartPage = () => {
     "CASH",
   );
 
-  const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
+const [_paymentModes, setPaymentModes] = useState<any[]>([]);
+const [cardTypes, setCardTypes] = useState<any[]>([]);
+const [onlineTypes, setOnlineTypes] = useState<any[]>([]);
+  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [isQRActive, setIsQRActive] = useState(false);
   const [selectedOnline, setSelectedOnline] = useState<any>(null);
   const [billData, setBillData] = useState<any>(null);
+  const [paymentData, setPaymentData] = useState<any>(null);
 
+  const [paymentChecking, setPaymentChecking] = useState(false);
 
-  const generateUPIUrl = () => {
-  const upiId = selectedOnline?.CardType || "test@upi";
-  const name = "POS Payment";
-
-  const amount = (billData?.GrandTotal ?? total).toFixed(2);
-
-  return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(
-    name
-  )}&am=${amount}&cu=INR`;
-};
+  useEffect(() => {
+  if (
+    paymentMode === "CARD" &&
+    cardTypes.length > 0
+  ) {
+    setSelectedCard(cardTypes[0]);
+  }
+}, [paymentMode, cardTypes]);
   useEffect(() => {
     const fetchBill = async () => {
       try {
@@ -74,26 +83,45 @@ const CartPage = () => {
     fetchBill();
   }, [items]);
 
-  useEffect(() => {
-    const fetchPaymentTypes = async () => {
-      try {
-        const cardRes = await getCardTypes();
-        const onlineRes = await getonlineTypes();
+useEffect(() => {
+  const fetchPaymentTypes = async () => {
+    try {
+      // QR Status
+      const qrRes = await getOnlinePaymentTypes();
+      setIsQRActive(qrRes?.IsQRActive === true);
+const branchcode = localStorage.getItem("branch_code")||""
+      // Payment Modes
+      const res = await getPaymentModeMaster(branchcode);
 
-        console.log("Cards 👉", cardRes);
-        console.log("Online 👉", onlineRes);
+      setPaymentModes(res);
 
-        setOnlineTypes(
-          Array.isArray(onlineRes) ? onlineRes : onlineRes?.data || [],
-        );
-      } catch (error) {
-        console.error("Error fetching payment types:", error);
+      const card = res.find(
+        (x: any) => x.modeType.toUpperCase() === "CARD"
+      );
+
+      // const online = res.find(
+      //   (x: any) => x.modeType.toUpperCase() === "ONLINE"
+      // );
+
+      const upi = res.find(
+        (x: any) => x.modeType.toUpperCase() === "UPI"
+      );
+
+      setCardTypes(card?.subModes || []);
+
+      // If QR is enabled, don't show UPI list
+      if (!qrRes?.IsQRActive) {
+        setOnlineTypes(upi?.subModes || []);
       }
-    };
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
+  if (companyInfo?.Branch_code) {
     fetchPaymentTypes();
-  }, []);
-
+  }
+}, [companyInfo]);
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_IMAGE;
   };
@@ -102,11 +130,56 @@ const CartPage = () => {
     const random = Math.floor(Math.random() * 100000); // 5 digit random
     return `TXN-${timestamp}-${random}`;
   };
+const fetchPaymentQR = async () => {
+  try {
+    const transactionId = generateTransactionId();
 
+    const amount = Math.round((billData?.GrandTotal ?? total) * 100);
+
+    const res = await sendPaymentRequest(amount, transactionId);
+
+    if (res?.success) {
+      setPaymentData({
+        ...res.data,
+        localTransactionId: transactionId,
+      });
+
+      // Start polling only after QR is generated successfully
+      startPaymentStatusPolling(transactionId);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+  const startPaymentStatusPolling = (transactionId: string) => {
+    if (paymentChecking) return;
+
+    setPaymentChecking(true);
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await checkPaymentStatus(transactionId);
+
+        console.log("Payment Status 👉", res);
+
+        if (res?.success === true && res?.code === "PAYMENT_SUCCESS") {
+          clearInterval(interval);
+
+          setPaymentChecking(false);
+
+          alert("✅ Payment Successful");
+          setPaymentData(res);
+
+          await handlePrintBill(res?.data?.transactionId);
+        }
+      } catch (err) {
+        console.error("Payment status check failed", err);
+      }
+    }, 3000);
+  };
   const mapCartToFoodPayload = (items: any[]) => {
     return items.map((item) => ({
       Id: item.id, // backend food ID
-      id: item.id,
       Food: item.name,
       code: "0",
       Price: item.price,
@@ -119,13 +192,14 @@ const CartPage = () => {
   const createBillPayload = () => {
     const foodItems = mapCartToFoodPayload(items);
     console.log(companyInfo, "code");
+    console.log("selectedOutlet", selectedOutlet);
 
     return {
       UserCode: 1,
       Table: "F",
       SubTable: "A",
-      Outlet: 7,
-      OutletName: "FASTFOOD",
+      Outlet: Number(selectedOutlet?.id || 0),
+      OutletName: selectedOutlet?.name || "",
       Waiter: 1,
       WaiterName: "ZZ",
       Pax: 1,
@@ -172,9 +246,8 @@ const CartPage = () => {
         UserCode: Number(res?.UserCode ?? 1),
         Table: res?.Table ?? "F",
         SubTable: res?.SubTable ?? "A",
-
-        Outlet: Number(selectedOutlet?.id),
-        OutletName: res?.OutletName ?? "FAST FOOD",
+        Outlet: Number(selectedOutlet?.id || 0),
+        OutletName: selectedOutlet?.name || "",
 
         Waiter: Number(res?.Waiter ?? 1),
         WaiterName: res?.WaiterName ?? "ZZ",
@@ -185,7 +258,7 @@ const CartPage = () => {
         Total: Number(totalAmount),
         TotQty: Number(totalQty),
 
-        Branch: res?.Branch ?? "DEROY",
+        Branch: companyInfo?.Branch_code || "",
         Type: res?.Type ?? "K",
 
         NCCode: Number(res?.NCCode ?? 0),
@@ -206,22 +279,23 @@ const CartPage = () => {
         CheckInNo: res?.CheckInNo ?? "0",
         KotMobileNo: "9845516950",
       },
-
-      Tax: {
-        TotalAmount: Number(tax?.TotalAmount ?? totalAmount),
-        TotalQty: Number(tax?.TotalQty ?? totalQty),
-        CGSTPer: Number(tax?.CGSTPer ?? 2.5),
-        CGSTAmt: Number(tax?.CGSTAmt ?? 0),
-        SGSTPer: Number(tax?.SGSTPer ?? 2.5),
-        SGSTAmt: Number(tax?.SGSTAmt ?? 0),
-        ServiceChargePer: Number(tax?.ServiceChargePer ?? 0),
-        ServiceCharge: Number(tax?.ServiceCharge ?? 0),
-        GrandTotal: Number(tax?.GrandTotal ?? totalAmount),
-        DiscountPer: Number(tax?.DiscountPer ?? 0),
-        Discount: Number(tax?.Discount ?? 0),
-        DiscountRemarks: null,
-        RoundOff: Number(tax?.RoundOff ?? 0),
-      },
+        Tax:tax,
+      // Tax: {
+      //   TotalAmount: Number(tax?.TotalAmount ?? totalAmount),
+      //   TotalQty: Number(tax?.TotalQty ?? totalQty),
+      //   CGSTPer: Number(tax?.CGSTPer ?? 2.5),
+      //   CGSTAmt: Number(tax?.CGSTAmt ?? 0),
+      //   SGSTPer: Number(tax?.SGSTPer ?? 2.5),
+      //   SGSTAmt: Number(tax?.SGSTAmt ?? 0),
+      //   ServiceChargePer: Number(tax?.ServiceChargePer ?? 0),
+      //   ServiceCharge: Number(tax?.ServiceCharge ?? 0),
+      //   GrandTotal: Number(tax?.GrandTotal ?? totalAmount),
+      //   DiscountPer: Number(tax?.DiscountPer ?? 0),
+      //   Discount: Number(tax?.Discount ?? 0),
+      //   DiscountRemarks: "",
+      //   RoundOff: Number(tax?.RoundOff ?? 0),
+        
+      // },
 
       BillingType: "ADD",
       SubBillingType: "C",
@@ -231,55 +305,176 @@ const CartPage = () => {
         code: paymentMode,
         message: "COMPLETED",
         data: {
-          transactionId:
-            paymentMode === "ONLINE" ? selectedOnline.CardType : "CASH",
+          transactionId: transactionId,
 
           amount: Number(tax?.GrandTotal ?? totalAmount),
           merchantId: transactionId,
           providerReferenceId: "POS",
-          qrString: "",
+          qrString:
+            paymentMode === "CASH"
+              ? "CASH"
+              : paymentMode === "CARD"
+                ? selectedCard?.subModeType || ""
+                : isQRActive
+                  ? "QR"
+                  : selectedOnline?.subModeType || "",
         },
       },
     };
   };
 
-  const handlePrintBill = async () => {
-    try {
-      setLoading(true);
-      const transactionId = generateTransactionId(); // 🔥 generate here
-      const payload = createBillPayload();
-      const res = await getBill(payload);
+//  const handlePrintBill = async (onlineTransactionId?: string) => {
+//   try {
+//     setLoading(true);
 
-      const payload2 = buildSubmitPayloadFromRes(items, res, transactionId);
+//     const transactionId =
+//       paymentMode === "ONLINE" && isQRActive
+//         ? onlineTransactionId
+//         : generateTransactionId();
 
-      // ✅ use centralized API
-      const res2 = await submitBill(payload2);
-      const res3 = await getbillnouseorderid(transactionId);
-      console.log("res3", res3);
+//     const payload = createBillPayload();
 
-      console.log("Backend Bill 👉", res2);
+//     // ================= GET BILL =================
+//     let res;
+//     try {
+//       res = await getBill(payload);
+//     } catch (err) {
+//       alert("❌ getBill API failed");
+//       console.error("getBill error:", err);
+//       return;
+//     }
 
-      if (!res2.success) {
-        alert("Bill calculation failed");
-        return;
-      }
+//     const payload2 = buildSubmitPayloadFromRes(
+//       items,
+//       res,
+//       transactionId
+//     );
 
-      await printerService.printBill(items, res, companyInfo, res3.billdetails);
+//     // ================= SUBMIT BILL =================
+//     let res2;
+//     try {
+//       res2 = await submitBill(payload2);
+//     } catch (err) {
+//       alert("❌ submitBill API failed");
+//       console.error("submitBill error:", err);
+//       return;
+//     }
 
-      dispatch({ type: "CLEAR_CART" });
-      navigate("/itemsPage");
-    } catch (err) {
-      console.error("Submit/Print error:", err);
-      alert("❌ Error while submitting or printing bill");
-    } finally {
-      setLoading(false);
+//     if (!res2) {
+//       alert("❌ Bill submission failed");
+//       return;
+//     }
+
+//     // ================= GET BILL NO =================
+//     let res3;
+//     try {
+//       res3 = await getbillnouseorderid(transactionId);
+//     } catch (err) {
+//       alert("❌ getbillnouseorderid API failed");
+//       console.error("getbillnouseorderid error:", err);
+//       return;
+//     }
+
+//     // ================= PRINT =================
+//     try {
+//       await printerService.printBill(
+//         items,
+//         res,
+//         companyInfo,
+//         res3.billdetails
+//       );
+//     } catch (err) {
+//       alert("❌ Printer failed");
+//       console.error("Printer error:", err);
+//       return;
+//     }
+
+//     dispatch({ type: "CLEAR_CART" });
+
+//     navigate("/itemsPage");
+//   } catch (err) {
+//     alert("❌ Unknown error");
+//     console.error("Unknown error:", err);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+ const handlePrintBill = async (onlineTransactionId?: string) => {
+  setLoading(true);
+
+  try {
+    const transactionId =
+      paymentMode === "ONLINE" && isQRActive
+        ? onlineTransactionId
+        : generateTransactionId();
+
+    // ================= GET BILL =================
+    const billResponse = await getBill(createBillPayload());
+
+    console.log("✅ GetBill Response:", billResponse);
+
+    if (!billResponse) {
+      alert("Failed to get bill.");
+      return;
     }
-  };
-useEffect(() => {
-  if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
-    setSelectedOnline(onlineTypes[0]);
+
+    // ================= BUILD SUBMIT PAYLOAD =================
+    const submitPayload = buildSubmitPayloadFromRes(
+      billResponse,
+      billResponse,
+      transactionId
+    );
+
+    console.log("📤 Submit Payload:", submitPayload);
+debugger
+    // ================= SUBMIT BILL =================
+    const submitResponse = await submitBill(submitPayload);
+
+    console.log("✅ SubmitBill Response:", submitResponse);
+
+    if (!submitResponse) {
+      alert("Bill submission failed");
+      return;
+    }
+const Branchcode =localStorage.getItem("branch_code") || ""
+    // ================= GET BILL NUMBER =================
+    const billNoResponse = await getbillnouseorderid(transactionId,Number(selectedOutlet?.id || 0),Branchcode);
+
+    console.log("✅ Bill No Response:", billNoResponse);
+
+    // ================= PRINT =================
+    await printerService.printBill(
+      items,
+      billResponse,
+      companyInfo,
+      billNoResponse?.billdetails
+    );
+
+    dispatch({ type: "CLEAR_CART" });
+
+    navigate("/itemsPage");
+  } catch (err: any) {
+    console.error("Handle Print Error:", err);
+
+    if (err?.response) {
+      console.log("Status:", err.response.status);
+      console.log("Response:", err.response.data);
+    }
+
+    alert(err?.response?.data?.message || "Something went wrong");
+  } finally {
+    setLoading(false);
   }
-}, [paymentMode, onlineTypes]);
+};
+
+
+useEffect(() => {
+    if (paymentMode === "ONLINE" && onlineTypes.length > 0) {
+      setSelectedOnline(onlineTypes[0]);
+    }
+  }, [paymentMode, onlineTypes]);
+
+
   return (
     <>
       {activePage === "sales" ? (
@@ -326,7 +521,7 @@ useEffect(() => {
 
                       <div>
                         <h3 className="font-semibold">{item.name}</h3>
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 text-lg">
                           ₹{item.price.toFixed(2)}
                         </p>
                       </div>
@@ -337,18 +532,18 @@ useEffect(() => {
                         onClick={() =>
                           dispatch({ type: "DECREASE_QTY", payload: item.id })
                         }
-                        className="w-8 h-8 border rounded"
+                        className="w-10 h-10 border rounded text-xl font-bold"
                       >
                         -
                       </button>
 
-                      <span>{item.qty}</span>
+                      <span className="text-lg font-bold">{item.qty}</span>
 
                       <button
                         onClick={() =>
                           dispatch({ type: "INCREASE_QTY", payload: item.id })
                         }
-                        className="w-8 h-8 border rounded"
+                        className="w-10 h-10 border rounded text-xl font-bold"
                       >
                         +
                       </button>
@@ -368,14 +563,24 @@ useEffect(() => {
 
               {/* PAYMENT MODE */}
               <div className="mt-4">
-                <h3 className="font-medium mb-2">Payment Mode</h3>
+                <h3 className="text-xl font-bold mb-4 ">Payment Mode</h3>
 
                 {/* Main Modes */}
-                <div className="grid grid-cols-2 gap-2">
-                  {["CASH", "ONLINE"].map((mode) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {["CASH", "CARD", "ONLINE"].map((mode) => (
                     <button
                       key={mode}
-                      onClick={() => setPaymentMode(mode as any)}
+                     onClick={async () => {
+  setPaymentMode(mode as any);
+
+  if (
+    mode === "ONLINE" &&
+    isQRActive &&
+    (billData?.GrandTotal ?? total) > 0
+  ) {
+    await fetchPaymentQR();
+  }
+}}
                       className={`py-2 rounded-lg border text-sm font-medium transition 
           ${
             paymentMode === mode
@@ -398,57 +603,105 @@ useEffect(() => {
                     ) : (
                       onlineTypes.map((online) => (
                         <button
-                          key={online.CardId}
+                          key={online.subModeId}
                           onClick={() => setSelectedOnline(online)}
                           className={`py-2 rounded-lg border text-sm transition 
               ${
-                selectedOnline?.CardId === online.CardId
+                selectedOnline?.subModeId === online.subModeId
                   ? "bg-purple-600 text-white border-purple-600"
                   : "bg-white"
               }`}
                         >
-                          {online.CardType}
+                          {online.subModeType}
                         </button>
                       ))
                     )}
                   </div>
                 )} */}
+                {/* CARD TYPES */}
+                {paymentMode === "CARD" && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {cardTypes.length === 0 ? (
+                      <p className="text-sm text-gray-500">
+                        Loading card types...
+                      </p>
+                    ) : (
+                      cardTypes.map((card) => (
+                        <button
+                          key={card.subModeId}
+                          onClick={() => setSelectedCard(card)}
+                          className={`py-2 rounded-lg border text-sm transition
+          ${
+            selectedCard?.subModeId === card.subModeId
+              ? "bg-green-600 text-white border-green-600"
+              : "bg-white"
+          }`}
+                        >
+                          {card.subModeType}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+                {paymentMode === "ONLINE" && (
+                  <>
+                    {isQRActive ? (
+                      <div className="mt-6 flex flex-col items-center justify-center w-full">
+                        <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
+                          Scan & Pay
+                        </p>
 
-                {paymentMode === "ONLINE" && selectedOnline && (
-  <div className="mt-6 flex flex-col items-center justify-center w-full">
-    
-    <p className="text-sm sm:text-base text-gray-600 mb-3 text-center">
-      Scan & Pay
-    </p>
+                        <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
+                          <QRCodeCanvas
+                            value={paymentData?.qrString || ""}
+                            size={
+                              window.innerWidth < 640
+                                ? 160
+                                : window.innerWidth < 1024
+                                  ? 220
+                                  : 280
+                            }
+                            bgColor="#ffffff"
+                            fgColor="#000000"
+                            level="H"
+                            includeMargin
+                          />
+                        </div>
 
-    {/* QR BOX */}
-    <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl shadow-md flex justify-center w-full">
-      <QRCodeCanvas
-        value={generateUPIUrl()}
-        size={
-          window.innerWidth < 640
-            ? 160   // 📱 mobile
-            : window.innerWidth < 1024
-            ? 220   // 💻 tablet
-            : 280   // 🖥️ kiosk
-        }
-        bgColor="#ffffff"
-        fgColor="#000000"
-        level="H"
-        includeMargin
-      />
-    </div>
+                        <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
+                          ₹{((paymentData?.amount || 0) / 100).toFixed(2)}
+                        </p>
 
-    {/* Amount */}
-    <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 mt-3 text-center">
-      ₹{(billData?.GrandTotal ?? total).toFixed(2)}
-    </p>
-
-    <p className="text-xs text-gray-400 text-center">
-      Scan using any UPI app
-    </p>
-  </div>
-)}
+                        <p className="text-xs text-gray-400 text-center">
+                          Scan using any UPI app
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {onlineTypes.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            Loading online types...
+                          </p>
+                        ) : (
+                          onlineTypes.map((online) => (
+                            <button
+                              key={online.subModeId}
+                              onClick={() => setSelectedOnline(online)}
+                              className={`py-2 rounded-lg border text-sm transition
+            ${
+              selectedOnline?.subModeId === online.subModeId
+                ? "bg-purple-600 text-white border-purple-600"
+                : "bg-white"
+            }`}
+                            >
+                              {online.subModeType}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* SUMMARY + PRINTER */}
@@ -493,6 +746,7 @@ useEffect(() => {
                 {/* Grand Total */}
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Grand Total</span>
+                  {/* <span>₹{((paymentData?.amount || 0) / 100).toFixed(2)}</span> */}
                   <span>₹{(billData?.GrandTotal ?? total).toFixed(2)}</span>
                 </div>
 
@@ -505,15 +759,17 @@ useEffect(() => {
                   ) : (
                     <button
                       disabled={loading}
-                      onClick={handlePrintBill}
+                      onClick={() => handlePrintBill()}
                       className="w-full text-white font-semibold py-3 rounded-xl transition"
-                      style={{ backgroundColor: mainBlue }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.backgroundColor = hoverBlue)
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.backgroundColor = mainBlue)
-                      }
+                      style={{
+                        backgroundColor: mainBlue,
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = hoverBlue;
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = mainBlue;
+                      }}
                     >
                       {loading ? "Processing..." : "Submit & Print 🧾"}
                     </button>
@@ -529,3 +785,11 @@ useEffect(() => {
 };
 
 export default CartPage;
+
+
+
+
+
+
+
+

@@ -38,7 +38,6 @@ export interface FoodResponse {
 }
 export interface BillFood {
   Id: number;
-  id: number;
   Food: string;
   code: string;
   Price: number;
@@ -79,24 +78,32 @@ export interface BillPayload {
 
 
 // 📂 Food APIs
-export const getFoodCategories = async (): Promise<any> => {
-  const response = await axiosInstance.get("/api/kot/getfoodcategories");
+export const getFoodCategories = async (
+  branchCode: string
+): Promise<any> => {
+  const response = await axiosInstance.get("/api/kot/getfoodcategories", {
+    params: {
+      Branchcode: branchCode,
+    },
+  });
+
   return response.data;
 };
 export const getFoodsImage = async (
   outletCode: number ,
   categoryId: number,
   filter: string = "",
+  Branchcode:string 
 ): Promise<FoodResponse> => {
   const response = await axiosInstance.get("/api/kot/getfoodsimage", {
-    params: { outlet: outletCode, category: categoryId, filter },
+    params: { outlet: outletCode, category: categoryId, filter ,Branchcode},
   });
   return response.data;
 };
 // 📦 Billing APIs
 
 export const getBill = async (bill: BillPayload): Promise<any> => {
-  const response = await axiosInstance.post("/api/kot/getbill", bill);
+  const response = await axiosInstance.post("/api/kot/KotGetBill", bill);
   return response.data;
 };
 export const getCardTypes = async (): Promise<any> => {
@@ -111,10 +118,32 @@ export const getonlineTypes = async (): Promise<any> => {
 export const getChanceSheetReport = async (
   fromdate: string,
   todate: string,
-  outlet: number
+  outlet: string,
+  branchcode:string
 ): Promise<any> => {
   const response = await axiosInstance.get(
-    "/api/pos/reports/Chancesheet",
+    "/api/POSReports/Chancesheet",
+    {
+      params: {
+        fromdate,
+        todate,
+        outlet,
+        branchcode
+      },
+    }
+  );
+
+  return response.data;
+};
+
+
+export const getItemSalesReport = async (
+  fromdate: string,
+  todate: string,
+  outlet: string,
+): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/POSReports/Itemsales",
     {
       params: {
         fromdate,
@@ -128,28 +157,9 @@ export const getChanceSheetReport = async (
 };
 
 
-
-export const getItemSalesReport = async (
-  fromdate: string,
-  todate: string,
-): Promise<any> => {
-  const response = await axiosInstance.get(
-    "/api/pos/reports/itemsales",
-    {
-      params: {
-        fromdate,
-        todate,
-      },
-    }
-  );
-
-  return response.data;
-};
-
-
 export const submitBill = async (bill: any): Promise<any> => {
   const response = await axiosInstance.post(
-    "/api/kot/submitOrderdirectbillnew",
+    "/api/KOT/submitOrderdirectbillnew",
     bill,
   );
   return response.data;
@@ -174,10 +184,16 @@ export const getcompanyinfobill = async (): Promise<any> => {
   const response = await axiosInstance.get("/api/kot/getcompanyinfobill");
   return response.data;
 };
-export const getbillnouseorderid = async (transactionId: any): Promise<any> => {
+export const getBranch = async (): Promise<any> => {
+  const response = await axiosInstance.get("/api/KOT/GetBranch");
+  return response.data;
+};
+export const getbillnouseorderid = async (transactionId: any,Oltcode:number,Branchcode:string): Promise<any> => {
   const response = await axiosInstance.get("/api/kot/getbillnouseorderid", {
     params: {
-      OrderId: transactionId
+      OrderId: transactionId,
+      Oltcode:Oltcode,
+      Branchcode:Branchcode
     }
   });
   return response.data;
@@ -189,7 +205,7 @@ export const sendPaymentRequest = async (
   transno: string,
 ): Promise<any> => {
   const response = await axiosInstance.post(
-    "/api/kot/SendPaymentRequest",
+    "/api/PhonePeDQRDevice/SendPaymentRequestOwnDevice",
     {},
     {
       params: { Amount: amount, Transno: transno },
@@ -199,8 +215,54 @@ export const sendPaymentRequest = async (
 };
 
 export const checkPaymentStatus = async (transno: string): Promise<any> => {
-  const response = await axiosInstance.get("/api/kot/CheckPaymentStatus", {
+  const response = await axiosInstance.get("/api/PhonePeDQRDevice/CheckOwnDevicePaymentStatus", {
     params: { transno },
   });
   return response.data;
 };
+export const getOutletsForUser = async (
+  username: string
+): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/kot/getoutletsforuser",
+    {
+      params: {
+        username,
+      },
+    }
+  );
+
+  return response.data;
+};
+
+
+export const getOnlinePaymentTypes = async (): Promise<any> => {
+  const response = await axiosInstance.get(
+    "/api/kot/OnlinePaymentType"
+  );
+
+  return response.data;
+};
+
+
+export const getPaymentModeMaster = async (branchCode: string) => {
+  const response = await axiosInstance.get(
+    "/api/POS/GetPaymentModeMaster",
+    {
+      params: {
+        branchcode: branchCode,
+      },
+    }
+  );
+
+  return response.data;
+};
+
+
+
+
+
+
+
+
+

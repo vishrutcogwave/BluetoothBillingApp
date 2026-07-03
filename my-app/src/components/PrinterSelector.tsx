@@ -159,47 +159,64 @@ type Props = {
 
 export default function PrinterSelector({ onConnected }: Props) {
   useEffect(() => {
-    const ensureConnected = async () => {
-      try {
-        // Wait until Cordova is ready
-        await printerService.initialize();
+  const ensureConnected = async () => {
+  try {
+    alert("1. initialize()");
+    await printerService.initialize();
 
-        // Already connected
-        if (await printerService.isConnected()) {
-          console.log("✅ Printer already connected");
-          onConnected();
-          return;
-        }
+    alert("2. Checking connection");
 
-        // Try reconnecting to last printer
-        if (await printerService.autoReconnect()) {
-          console.log("✅ Auto reconnect success");
-          onConnected();
-          return;
-        }
+    if (await printerService.isConnected()) {
+      alert("Already connected");
+      onConnected();
+      return;
+    }
 
-        // Connect first paired printer
-        const paired = await printerService.getPairedDevices();
+    alert("3. Auto reconnect");
 
-        if (!paired.length) {
-          alert("❌ No paired printers found");
-          return;
-        }
+    const reconnected = await printerService.autoReconnect();
 
-        const printer = paired[0];
+    alert("Auto reconnect result: " + reconnected);
 
-        console.log("Connecting to:", printer.name, printer.address);
+    if (reconnected) {
+      onConnected();
+      return;
+    }
 
-        await printerService.connect(printer.address);
+    alert("4. Getting paired devices");
 
-        alert(`✅ Connected to ${printer.name || "Printer"}`);
+    const paired = await printerService.getPairedDevices();
 
-        onConnected();
-      } catch (err: any) {
-        console.error("Printer connection error:", err);
-        alert("❌ Printer connection failed: " + (err?.message || err));
-      }
-    };
+    alert("Paired printers: " + paired.length);
+
+    if (!paired.length) {
+      alert("❌ No paired printers found");
+      return;
+    }
+
+    const printer = paired[0];
+
+    alert(
+      "Connecting to:\n" +
+      (printer.name || "Unknown") +
+      "\n" +
+      printer.address
+    );
+
+    await printerService.connect(printer.address);
+
+    alert("✅ Connected Successfully");
+
+    onConnected();
+  } catch (err: any) {
+    alert(
+      "❌ ERROR:\n" +
+      (err?.message || JSON.stringify(err) || String(err))
+    );
+
+    console.error(err);
+  }
+};
 
     const onDeviceReady = () => {
       ensureConnected();

@@ -92,7 +92,7 @@ export const getFoodCategories = async (
 export const getFoodsImage = async (
   outletCode: number ,
   categoryId: number,
-  filter: string = "",
+  filter: string = "0",
   Branchcode:string 
 ): Promise<FoodResponse> => {
   const response = await axiosInstance.get("/api/kot/getfoodsimage", {

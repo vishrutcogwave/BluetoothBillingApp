@@ -258,17 +258,6 @@ async printBill(
     console.log("Company:", company);
     console.log("Bill Details:", billDetails);
 
-    let connected = await this.isConnected();
-
-    if (!connected) {
-      const reconnected = await this.autoReconnect();
-
-      if (!reconnected) {
-        alert("Printer not connected");
-        return;
-      }
-    }
-
     const ESC = 0x1b;
     const bytes: number[] = [];
     const WIDTH = 32;
@@ -279,7 +268,7 @@ async printBill(
     const line = "-".repeat(WIDTH);
 
     const center = (text: string) =>
-      text.padStart(Math.floor((WIDTH + text.length) / 2)).padEnd(WIDTH);
+      text.padStart((WIDTH + text.length) / 2).padEnd(WIDTH);
 
     const row = (left: string, right: string) =>
       `${left.padEnd(WIDTH - right.length)}${right}\n`;
@@ -311,12 +300,10 @@ async printBill(
 
     bytes.push(ESC, 0x61, 0x00);
 
-    // Correct property names
-    const billNo = billDetails?.billno ?? "";
-    const outlet = billDetails?.outletName ?? "";
-    const billDate = billDetails?.billDate ?? "";
-    const billTime = billDetails?.billTime ?? "";
-
+const billNo = billDetails?.billno ?? "";
+const outlet = billDetails?.outletName ?? "";
+const billDate = billDetails?.billDate ?? "";
+const billTime = billDetails?.billTime ?? "";
     if (outlet)
       bytes.push(...enc(`Outlet : ${outlet}\n`));
 
@@ -413,18 +400,17 @@ async printBill(
 
     bytes.push(
       ...enc(
-        center(
-          `GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`
-        ) + "\n"
+        center(`GRAND TOTAL : Rs ${bill.GrandTotal.toFixed(2)}`) + "\n"
       )
     );
 
     bytes.push(ESC, 0x45, 0x00);
 
-    bytes.push(...enc("\nThank You! Visit Again\n\n\n"));
+    bytes.push(...enc("\nThank You! Visit Again 🙏\n\n\n"));
 
     console.log("Bytes Length:", bytes.length);
 
+    // Let write() handle connection checking
     await this.write(new Uint8Array(bytes));
 
     console.log("Print Success");

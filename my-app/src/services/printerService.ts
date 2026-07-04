@@ -83,14 +83,14 @@ class PrinterService {
      ========================= */
 async write(bytes: Uint8Array): Promise<void> {
 
-  alert("WRITE START");
+  // alert("WRITE START");
 
-  const connected =
-    await this.isConnected();
+  // const connected =
+  //   await this.isConnected();
 
-  alert(
-    "CONNECTED: " + connected
-  );
+  // alert(
+  //   "CONNECTED: " + connected
+  // );
 
   let binary = "";
 

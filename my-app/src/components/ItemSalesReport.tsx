@@ -240,38 +240,50 @@ return (
             </tr>
           </thead>
 
-          <tbody>
-            {sales.length > 0 ? (
-              sales.map((item, i) => (
-                <tr key={i}>
-                  <td className="border px-2 py-2">
-                    {item.ItemName.replace("\n", " ")}
-                  </td>
+      <tbody>
+  {sales.length > 0 ? (
+    sales.map((group: any, groupIndex: number) => (
+      <React.Fragment key={groupIndex}>
+        {/* Group Heading */}
+        <tr className="bg-gray-200 font-bold">
+          <td colSpan={4} className="border px-2 py-2">
+            {group.groupName}
+          </td>
+        </tr>
 
-                  <td className="border px-2 py-2 text-right">
-                    {item.Rate.toFixed(2)}
-                  </td>
+        {/* Items */}
+        {group.items.map((item: any, itemIndex: number) => (
+          <tr key={itemIndex}>
+            <td className="border px-2 py-2">
+              {item.itemName}
+            </td>
 
-                  <td className="border px-2 py-2 text-right">
-                    {item.Qty}
-                  </td>
+            <td className="border px-2 py-2 text-right">
+              {Number(item.rate).toFixed(2)}
+            </td>
 
-                  <td className="border px-2 py-2 text-right">
-                    {item.Total.toFixed(2)}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="text-center py-3 text-gray-500 text-lg"
-                >
-                  No data available
-                </td>
-              </tr>
-            )}
-          </tbody>
+            <td className="border px-2 py-2 text-right">
+              {item.quantity}
+            </td>
+
+            <td className="border px-2 py-2 text-right">
+              {Number(item.total).toFixed(2)}
+            </td>
+          </tr>
+        ))}
+      </React.Fragment>
+    ))
+  ) : (
+    <tr>
+      <td
+        colSpan={4}
+        className="text-center py-3 text-gray-500 text-lg"
+      >
+        No data available
+      </td>
+    </tr>
+  )}
+</tbody>
         </table>
       </div>
 

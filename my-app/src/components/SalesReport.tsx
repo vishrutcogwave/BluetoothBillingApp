@@ -7,12 +7,27 @@ import { printerService } from "../services/printerService";
 import PrinterSelector from "./PrinterSelector";
 
 type ApiBill = {
-  BillNo: string;
-  Grand: number;
-  Tax: number;
-  Cash: number;
-  Card: number;
-  OltName: string;
+  billNo: string;
+  date: string;
+  billTime: string;
+  itemSale: number;
+  tax: number;
+  cgst: number;
+  sgst: number;
+  dis: number;
+  total: number;
+  grand: number;
+  roundOff: number;
+  cash: number;
+  card: number;
+  cheque: number;
+  upi: number;
+  online: number;
+  credit: number;
+  roomNo: number;
+  kbsRefName: string;
+  oltName: string;
+  branchCode: string;
 };
 
 type SalesReportProps = {
@@ -25,7 +40,8 @@ const SalesReport: React.FC<SalesReportProps> = ({ onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [printerConnected, setPrinterConnected] = useState(false);
   const [printing, setPrinting] = useState(false);
-const [summary, setSummary] = useState<any[]>([]);
+const [summary, setSummary] = useState<any>({});
+const [remarksSummary, setRemarksSummary] = useState<any[]>([]);
   // ✅ Date States
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(today);
@@ -96,8 +112,9 @@ const branchcode = localStorage.getItem("branch_code") || ""
         branchcode
         );
 
-      setBills(data?.ChanceSheet || []);
-      setSummary(data?.Summary || []);
+setBills(data?.data || []);
+setSummary(data?.summary || {});
+setRemarksSummary(data?.remarksSummary || []);
       } catch (err) {
         setError("Failed to load report");
       } finally {
@@ -112,7 +129,7 @@ const branchcode = localStorage.getItem("branch_code") || ""
   const groupedBills = useMemo(() => {
     return bills.reduce(
       (acc, bill) => {
-        const outlet = bill.OltName || "Unknown Outlet";
+       const outlet = bill.oltName || "Unknown Outlet";
 
         if (!acc[outlet]) {
           acc[outlet] = [];
@@ -131,27 +148,21 @@ const branchcode = localStorage.getItem("branch_code") || ""
 
   const totalsByMethod = useMemo(() => {
     return {
-      Cash: bills.reduce((sum, b) => sum + (b.Cash || 0), 0),
+    Cash: bills.reduce((sum, b) => sum + (b.cash || 0), 0),
 
-      Card: bills.reduce((sum, b) => sum + (b.Card || 0), 0),
+Card: bills.reduce((sum, b) => sum + (b.card || 0), 0),
 
-      Online: bills
-        .filter(
-          (b) => (b.Cash || 0) === 0 && (b.Card || 0) === 0,
-        )
-        .reduce((sum, b) => sum + (b.Grand || 0), 0),
+Online: bills.reduce((sum, b) => sum + (b.online || 0), 0),
     };
   }, [bills]);
 
   const paymentCounts = useMemo(() => {
     return {
-      Cash: bills.filter((b) => b.Cash > 0).length,
+    Cash: bills.filter((b) => b.cash > 0).length,
 
-      Card: bills.filter((b) => b.Card > 0).length,
+Card: bills.filter((b) => b.card > 0).length,
 
-      Online: bills.filter(
-        (b) => (b.Cash || 0) === 0 && (b.Card || 0) === 0,
-      ).length,
+Online: bills.filter((b) => b.online > 0).length,
     };
   }, [bills]);
 
@@ -197,19 +208,18 @@ const branchcode = localStorage.getItem("branch_code") || ""
 
   toDate: endDate,
 
-  bills: bills.map((b) => ({
-    BillNo: b.BillNo,
-    Grand: b.Grand,
-  })),
-
-  summary: summary.map((s) => ({
-    Particulars: s.Particulars,
-    Amount: s.Amount,
-  })),
+bills: bills.map((b) => ({
+  BillNo: b.billNo,
+  Grand: b.grand,
+})),
+summary: remarksSummary.map((s) => ({
+  Particulars: s.particulars,
+  Amount: s.amount,
+})),
 
   total: bills.reduce(
     (sum, item) =>
-      sum + Number(item.Grand || 0),
+      sum + Number(item.grand  || 0),
     0,
   ),
 });
@@ -386,14 +396,14 @@ const branchcode = localStorage.getItem("branch_code") || ""
                   {/* Bills */}
                   {outletBills.map((b) => (
                     <tr
-                      key={`${outlet}-${b.BillNo}`}
+                   key={`${outlet}-${b.billNo}`}
                     >
                       <td className="border px-2 py-1">
-                        {b.BillNo}
+                    {b.billNo}
                       </td>
 
                       <td className="border px-2 py-1 text-right">
-                        ₹ {b.Grand.toFixed(2)}
+                        ₹ {Number(b.grand).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -409,7 +419,7 @@ const branchcode = localStorage.getItem("branch_code") || ""
                       {outletBills
                         .reduce(
                           (sum, b) =>
-                            sum + (b.Grand || 0),
+                            sum + (b.grand  || 0),
                           0,
                         )
                         .toFixed(2)}
@@ -429,35 +439,86 @@ const branchcode = localStorage.getItem("branch_code") || ""
     SUMMARY
   </div>
 
-  {summary.map((item, index) => (
+  <div className="flex justify-between">
+    <span>Tax</span>
+    <span>₹ {Number(summary.tax || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>CGST</span>
+    <span>₹ {Number(summary.cgst || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>SGST</span>
+    <span>₹ {Number(summary.sgst || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Discount</span>
+    <span>₹ {Number(summary.discount || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Cash</span>
+    <span>₹ {Number(summary.cash || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Card</span>
+    <span>₹ {Number(summary.card || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>UPI</span>
+    <span>₹ {Number(summary.upi || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Online</span>
+    <span>₹ {Number(summary.online || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Cheque</span>
+    <span>₹ {Number(summary.cheque || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Credit</span>
+    <span>₹ {Number(summary.credit || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Round Off</span>
+    <span>₹ {Number(summary.roundOff || 0).toFixed(2)}</span>
+  </div>
+
+  <div className="flex justify-between font-bold border-t mt-2 pt-2 text-xl">
+    <span>Grand Total</span>
+    <span>₹ {Number(summary.grand || 0).toFixed(2)}</span>
+  </div>
+</div>
+
+{/* Remarks Summary */}
+
+<div className="mt-4 border rounded-md p-3 text-lg">
+  <div className="font-bold text-2xl mb-3">
+    REMARKS SUMMARY
+  </div>
+
+  {remarksSummary.map((item, index) => (
     <div
       key={index}
       className="flex justify-between"
     >
-      <span>
-        {item.Particulars} :
-      </span>
+      <span>{item.particulars}</span>
 
       <span>
-        ₹ {Number(item.Amount).toFixed(2)}
+        ₹ {Number(item.amount).toFixed(2)}
       </span>
     </div>
   ))}
-
-  <div className="flex justify-between font-bold border-t mt-2 pt-1 text-2xl">
-    <span>TOTAL :</span>
-
-    <span>
-      ₹{" "}
-     {bills
-  .reduce(
-    (sum, item) =>
-      sum + Number(item.Grand || 0),
-    0,
-  )
-  .toFixed(2)}
-    </span>
-  </div>
 </div>
     </div>
 

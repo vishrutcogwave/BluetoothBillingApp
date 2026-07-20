@@ -25,12 +25,13 @@ private final ServiceConnection serviceConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName name, IBinder service) {
         Log.d("SkposLCD", "✅ Printer Service Connected");
         printerService = IPrinterService.Stub.asInterface(service);
-        cordova.getActivity().runOnUiThread(() ->
-    android.widget.Toast.makeText(
-        cordova.getActivity(),
-        "Printer Service Connected",
-        android.widget.Toast.LENGTH_LONG
-    ).show()
+ cordova.getActivity().runOnUiThread(() ->
+    new android.app.AlertDialog.Builder(cordova.getActivity())
+        .setTitle("SkposLCD")
+        .setMessage("Printer Service Connected")
+        .setPositiveButton("OK", null)
+        .show()
+);
 );
     }
 
@@ -53,11 +54,11 @@ protected void pluginInitialize() {
             Context.BIND_AUTO_CREATE
     );
 
-    android.widget.Toast.makeText(
-    cordova.getActivity(),
-    "bindService = " + bound,
-    android.widget.Toast.LENGTH_LONG
-).show();
+new android.app.AlertDialog.Builder(cordova.getActivity())
+        .setTitle("SkposLCD")
+        .setMessage("bindService = " + bound)
+        .setPositiveButton("OK", null)
+        .show();
 }
 
     @Override

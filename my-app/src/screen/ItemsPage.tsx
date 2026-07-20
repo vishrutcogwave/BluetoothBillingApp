@@ -1,14 +1,14 @@
 
 
-
 import React, { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import FoodCard from "../components/FoodCard";
 import CartOverlay from "../components/CartOverlay";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { getFoodsImage } from "../api/kotService";
 import { FALLBACK_IMAGE } from "../utils";
-import QRCode from "qrcode";
+
 interface FoodItem {
   id: string | number;
   image: string;
@@ -38,60 +38,56 @@ const ItemsPage: React.FC<ItemsPageProps> = ({
   const navigate = useNavigate();
 const testLCD = async () => {
   try {
-    alert("1. Test button clicked");
+    alert("1. Test Started");
 
     if (!(window as any).cordova) {
-      alert("2. Cordova not available");
+      alert("Cordova not available");
       return;
     }
-
-    alert("3. Cordova detected");
 
     if (!(window as any).SkposLCD) {
-      alert("4. SkposLCD plugin not found");
-      console.log(window);
+      alert("SkposLCD plugin not found");
       return;
     }
-
-    alert("5. SkposLCD plugin found");
 
     const qrText = "https://google.com";
 
-    alert("6. Generating QR");
-
     const dataUrl = await QRCode.toDataURL(qrText);
 
-    alert("7. QR Generated");
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
 
-    console.log(dataUrl);
-
-    const base64 = dataUrl.replace(
-      "data:image/png;base64,",
-      ""
-    );
-
-    alert("8. Base64 Ready");
-
-    (window as any).SkposLCD.showQRCode(
-      base64,
+    (window as any).SkposLCD.wakeUp(
 
       () => {
-        alert("9. SUCCESS - QR sent to LCD");
+
+        alert("LCD Wake Success");
+
+        (window as any).SkposLCD.show(
+
+          base64,
+
+          () => {
+            alert("✅ QR Displayed Successfully");
+          },
+
+          (err: any) => {
+            alert("SHOW ERROR: " + JSON.stringify(err));
+            console.log(err);
+          }
+
+        );
+
       },
 
       (err: any) => {
-        alert("10. ERROR");
-
-        alert(JSON.stringify(err));
-
+        alert("WAKE ERROR: " + JSON.stringify(err));
         console.log(err);
       }
+
     );
+
   } catch (e: any) {
-    alert("11. Exception");
-
-    alert(e.message);
-
+    alert("Exception: " + e.message);
     console.log(e);
   }
 };
@@ -170,12 +166,11 @@ const Branchcode=localStorage.getItem("branch_code") ||""
           "
         />
       </div>
-
       <button
   onClick={testLCD}
-  className="mb-3 bg-red-600 text-white px-4 py-2 rounded"
+  className="mb-4 w-full bg-red-600 text-white py-3 rounded-lg font-bold"
 >
-  TEST LCD
+  TEST LCD QR
 </button>
 
       {/* Items Grid */}

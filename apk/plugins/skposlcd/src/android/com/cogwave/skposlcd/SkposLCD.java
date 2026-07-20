@@ -1,4 +1,5 @@
 package com.cogwave.skposlcd;
+import android.util.Log;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,31 +19,46 @@ import net.nyx.printerservice.print.IPrinterService;
 public class SkposLCD extends CordovaPlugin {
 
     private IPrinterService printerService;
-
-    private final ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            printerService = IPrinterService.Stub.asInterface(service);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            printerService = null;
-        }
-    };
+private final ServiceConnection serviceConnection = new ServiceConnection() {
 
     @Override
-    protected void pluginInitialize() {
-        Intent intent = new Intent();
-        intent.setPackage("net.nyx.printerservice");
-        intent.setAction("net.nyx.printerservice.IPrinterService");
-
-        cordova.getActivity().bindService(
-                intent,
-                serviceConnection,
-                Context.BIND_AUTO_CREATE
-        );
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        Log.d("SkposLCD", "✅ Printer Service Connected");
+        printerService = IPrinterService.Stub.asInterface(service);
+        cordova.getActivity().runOnUiThread(() ->
+    android.widget.Toast.makeText(
+        cordova.getActivity(),
+        "Printer Service Connected",
+        android.widget.Toast.LENGTH_LONG
+    ).show()
+);
     }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        Log.d("SkposLCD", "❌ Printer Service Disconnected");
+        printerService = null;
+    }
+};
+@Override
+protected void pluginInitialize() {
+
+    Intent intent = new Intent();
+    intent.setPackage("net.nyx.printerservice");
+    intent.setAction("net.nyx.printerservice.IPrinterService");
+
+    boolean bound = cordova.getActivity().bindService(
+            intent,
+            serviceConnection,
+            Context.BIND_AUTO_CREATE
+    );
+
+    android.widget.Toast.makeText(
+    cordova.getActivity(),
+    "bindService = " + bound,
+    android.widget.Toast.LENGTH_LONG
+).show();
+}
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {

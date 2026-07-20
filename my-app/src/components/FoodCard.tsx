@@ -35,7 +35,7 @@ const FoodCard: React.FC<FoodCardProps> = ({
       <div className="w-full h-30 sm:h-28 md:h-32 overflow-hidden">
         <img
           onError={handleImgError}
-          src={image}
+         src={image || FALLBACK_IMAGE}
           alt={title}
           className="w-full h-full object-cover"
         />
@@ -62,7 +62,7 @@ const FoodCard: React.FC<FoodCardProps> = ({
           {description || ""}
         </p>
 
-        <span className="font-bold text-xs sm:text-sm md:text-base mb-2">
+        <span className="font-bold text-lg sm:text-xl md:text-2xl  mb-2">
           ₹{price.toFixed(2)}
         </span>
 

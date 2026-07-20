@@ -87,7 +87,7 @@ const CartOverlay: React.FC<CartOverlayProps> = ({
     <div className="fixed bottom-0 left-0 w-full bg-white shadow-lg border-t border-gray-300 p-4 z-50">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 max-w-6xl mx-auto">
         <div className="flex-1">
-          <p className="font-semibold text-sm sm:text-base md:text-lg">
+          <p className="font-bold text-lg sm:text-xl md:text-2xl ">
             {totalQty} item(s) selected | Total:  ₹{total.toFixed(2)}
           </p>
         </div>

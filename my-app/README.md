@@ -76,5 +76,5 @@ D:\vishrut\
  ├── apk        ← Cordova project
  └── my-app     ← React app
 
-APK build process : build the react code with "npm run build " than goto cordova app xcopy /E /I /Y D:\vishrut\CordovaProject\my-app\dist www
+APK build process : build the react code with "npm run build " than goto cordova app xcopy /E /I /Y  D:\vishrut\Clone\BluetoothBillingApp\my-app\dist www
 than give npx cordova build android to create apk

@@ -1,8 +1,11 @@
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -103,6 +106,7 @@ export const useAuth = () => {
   return context;
 };
 
+<<<<<<< HEAD
 
 
 
@@ -111,3 +115,5 @@ export const useAuth = () => {
 
 
 
+=======
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607

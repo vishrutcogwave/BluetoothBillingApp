@@ -1,3 +1,4 @@
+
 import axiosInstance from "./axios";
 
 export interface Cart {
@@ -92,7 +93,11 @@ export const getFoodCategories = async (
 export const getFoodsImage = async (
   outletCode: number ,
   categoryId: number,
+<<<<<<< HEAD
   filter: string = "0",
+=======
+  filter: string = "",
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607
   Branchcode:string 
 ): Promise<FoodResponse> => {
   const response = await axiosInstance.get("/api/kot/getfoodsimage", {
@@ -256,6 +261,7 @@ export const getPaymentModeMaster = async (branchCode: string) => {
   );
 
   return response.data;
+<<<<<<< HEAD
 };
 
 
@@ -266,3 +272,6 @@ export const getPaymentModeMaster = async (branchCode: string) => {
 
 
 
+=======
+};
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607

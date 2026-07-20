@@ -158,6 +158,7 @@ return (
         className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
       />
     </div>
+<<<<<<< HEAD
 
     {/* TO */}
     <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -275,6 +276,137 @@ return (
         </table>
       </div>
 
+=======
+
+    {/* TO */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <label className="min-w-[55px]">
+        To:
+      </label>
+
+      <input
+        type="date"
+        value={endDate}
+        min={startDate}
+        onChange={(e) =>
+          setEndDate(e.target.value)
+        }
+        className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
+      />
+    </div>
+
+    {/* OUTLET */}
+    <div className="flex items-center gap-2 w-full sm:w-auto">
+      <label className="min-w-[55px]">
+        Outlet:
+      </label>
+
+      <select
+        value={selectedOutletIds}
+        onChange={(e) =>
+          setSelectedOutletIds(
+            e.target.value
+          )
+        }
+        className="border rounded px-2 py-1 text-lg w-full sm:w-auto"
+      >
+        <option
+          value={outlets
+            .map((o) => o.id)
+            .join(",")}
+        >
+          All
+        </option>
+
+        {outlets.map((outlet) => (
+          <option
+            key={outlet.id}
+            value={outlet.id}
+          >
+            {outlet.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+</div>
+
+    {/* TABLE */}
+    <div className="bg-white rounded-lg shadow p-4">
+      <h2 className="text-2xl font-semibold mb-3">
+        Items
+      </h2>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-lg border border-gray-300">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-2 py-2 text-left">
+                ITEM
+              </th>
+
+              <th className="border px-2 py-2 text-right">
+                RATE
+              </th>
+
+              <th className="border px-2 py-2 text-right">
+                QTY
+              </th>
+
+              <th className="border px-2 py-2 text-right">
+                TOTAL
+              </th>
+            </tr>
+          </thead>
+
+      <tbody>
+  {sales.length > 0 ? (
+    sales.map((group: any, groupIndex: number) => (
+      <React.Fragment key={groupIndex}>
+        {/* Group Heading */}
+        <tr className="bg-gray-200 font-bold">
+          <td colSpan={4} className="border px-2 py-2">
+            {group.groupName}
+          </td>
+        </tr>
+
+        {/* Items */}
+        {group.items.map((item: any, itemIndex: number) => (
+          <tr key={itemIndex}>
+            <td className="border px-2 py-2">
+              {item.itemName}
+            </td>
+
+            <td className="border px-2 py-2 text-right">
+              {Number(item.rate).toFixed(2)}
+            </td>
+
+            <td className="border px-2 py-2 text-right">
+              {item.quantity}
+            </td>
+
+            <td className="border px-2 py-2 text-right">
+              {Number(item.total).toFixed(2)}
+            </td>
+          </tr>
+        ))}
+      </React.Fragment>
+    ))
+  ) : (
+    <tr>
+      <td
+        colSpan={4}
+        className="text-center py-3 text-gray-500 text-lg"
+      >
+        No data available
+      </td>
+    </tr>
+  )}
+</tbody>
+        </table>
+      </div>
+
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607
       {/* TOTAL */}
       <div className="mt-4 border rounded-md p-3 text-2xl font-bold flex justify-between">
         <span>TOTAL :</span>

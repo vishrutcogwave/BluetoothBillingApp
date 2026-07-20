@@ -42,7 +42,7 @@ const CartPage = () => {
   const [activePage, setActivePage] = useState<string>("home");
   const [loading, setLoading] = useState(false);
   const { companyInfo } = useCompany();
-  const [paymentMode, setPaymentMode] = useState<"CASH" | "CARD" | "ONLINE">(
+  const [paymentMode, setPaymentMode] = useState<"CASH" | "CARD" | "ONLINE" |  "PLUXEE">(
     "CASH",
   );
 
@@ -310,6 +310,7 @@ const fetchPaymentQR = async () => {
           amount: Number(tax?.GrandTotal ?? totalAmount),
           merchantId: transactionId,
           providerReferenceId: "POS",
+<<<<<<< HEAD
           qrString:
             paymentMode === "CASH"
               ? "CASH"
@@ -318,6 +319,18 @@ const fetchPaymentQR = async () => {
                 : isQRActive
                   ? "QR"
                   : selectedOnline?.subModeType || "",
+=======
+        qrString:
+  paymentMode === "CASH"
+    ? "CASH"
+    : paymentMode === "PLUXEE"
+      ? "PLUXEE"
+      : paymentMode === "CARD"
+        ? selectedCard?.subModeType || ""
+        : isQRActive
+          ? "QR"
+          : selectedOnline?.subModeType || "",
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607
         },
       },
     };
@@ -567,7 +580,11 @@ useEffect(() => {
 
                 {/* Main Modes */}
                 <div className="grid grid-cols-3 gap-2">
+<<<<<<< HEAD
                   {["CASH", "CARD", "ONLINE"].map((mode) => (
+=======
+                {["CASH", "CARD", "ONLINE", "PLUXEE"].map((mode) => (
+>>>>>>> ec454203c02b6f7dd392c58e7823c00b8b2f6607
                     <button
                       key={mode}
                      onClick={async () => {

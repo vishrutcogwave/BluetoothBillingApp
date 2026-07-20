@@ -23,11 +23,20 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
       "clobbers": [
         "window.bluetoothSerial"
       ]
+    },
+    {
+      "id": "cordova-plugin-skposlcd.SkposLCD",
+      "file": "plugins/cordova-plugin-skposlcd/www/SkposLCD.js",
+      "pluginId": "cordova-plugin-skposlcd",
+      "clobbers": [
+        "SkposLCD"
+      ]
     }
   ];
   module.exports.metadata = {
     "cordova-plugin-android-permissions": "1.1.5",
     "cordova-plugin-device": "3.0.0",
-    "cordova-plugin-bluetooth-serial": "0.4.7"
+    "cordova-plugin-bluetooth-serial": "0.4.7",
+    "cordova-plugin-skposlcd": "1.0.0"
   };
 });

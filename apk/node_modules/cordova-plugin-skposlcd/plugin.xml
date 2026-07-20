@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin
+    id="cordova-plugin-skposlcd"
+    version="1.0.0"
+    xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <name>SkposLCD</name>
+
+    <js-module src="www/SkposLCD.js" name="SkposLCD">
+        <clobbers target="SkposLCD" />
+    </js-module>
+
+    <platform name="android">
+
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="SkposLCD">
+                <param
+                    name="android-package"
+                    value="com.cogwave.skposlcd.SkposLCD" />
+            </feature>
+        </config-file>
+
+        <!-- Main Plugin -->
+     <source-file
+    src="src/android/com/cogwave/skposlcd/SkposLCD.java"
+    target-dir="src/com/cogwave/skposlcd" />
+
+        <!-- Java SDK -->
+        <source-file
+            src="src/android/net/nyx/printerservice/print/PrintTextFormat.java"
+            target-dir="src/net/nyx/printerservice/print" />
+
+        <!-- AIDL -->
+        <source-file
+            src="src/android/aidl/net/nyx/printerservice/print/IPrinterService.aidl"
+            target-dir="aidl/net/nyx/printerservice/print" />
+
+        <source-file
+            src="src/android/aidl/net/nyx/printerservice/print/PrintTextFormat.aidl"
+            target-dir="aidl/net/nyx/printerservice/print" />
+
+    </platform>
+
+</plugin>

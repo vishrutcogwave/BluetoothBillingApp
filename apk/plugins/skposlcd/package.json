@@ -1,0 +1,18 @@
+{
+  "name": "cordova-plugin-skposlcd",
+  "version": "1.0.0",
+  "description": "SKPOS LCD Plugin",
+  "cordova": {
+    "id": "cordova-plugin-skposlcd",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "android",
+    "skpos",
+    "lcd"
+  ],
+  "license": "MIT"
+}

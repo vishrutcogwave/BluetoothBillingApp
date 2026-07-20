@@ -22,5 +22,13 @@
     },
     "is_top_level": true,
     "variables": {}
+  },
+  "cordova-plugin-skposlcd": {
+    "source": {
+      "type": "local",
+      "path": "node_modules\\cordova-plugin-skposlcd"
+    },
+    "is_top_level": true,
+    "variables": {}
   }
 }

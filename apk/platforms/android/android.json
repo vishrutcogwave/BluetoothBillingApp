@@ -15,6 +15,10 @@
             {
               "xml": "<feature name=\"Device\"><param name=\"android-package\" value=\"org.apache.cordova.device.Device\" /></feature>",
               "count": 1
+            },
+            {
+              "xml": "<feature name=\"SkposLCD\"><param name=\"android-package\" value=\"com.cogwave.skposlcd.SkposLCD\" /></feature>",
+              "count": 1
             }
           ],
           "/widget": [
@@ -54,6 +58,9 @@
     },
     "cordova-plugin-bluetooth-serial": {
       "PACKAGE_NAME": "com.cogwave.apk"
+    },
+    "cordova-plugin-skposlcd": {
+      "PACKAGE_NAME": "com.cogwave.apk"
     }
   },
   "dependent_plugins": {},
@@ -81,11 +88,20 @@
       "clobbers": [
         "window.bluetoothSerial"
       ]
+    },
+    {
+      "id": "cordova-plugin-skposlcd.SkposLCD",
+      "file": "plugins/cordova-plugin-skposlcd/www/SkposLCD.js",
+      "pluginId": "cordova-plugin-skposlcd",
+      "clobbers": [
+        "SkposLCD"
+      ]
     }
   ],
   "plugin_metadata": {
     "cordova-plugin-android-permissions": "1.1.5",
     "cordova-plugin-device": "3.0.0",
-    "cordova-plugin-bluetooth-serial": "0.4.7"
+    "cordova-plugin-bluetooth-serial": "0.4.7",
+    "cordova-plugin-skposlcd": "1.0.0"
   }
 }

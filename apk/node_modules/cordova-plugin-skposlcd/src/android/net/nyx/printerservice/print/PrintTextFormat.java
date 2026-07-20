@@ -266,4 +266,22 @@ public class PrintTextFormat implements Parcelable {
             return new PrintTextFormat[size];
         }
     };
+
+  @Override
+  public String toString() {
+    return "PrintTextFormat{" +
+      "textSize=" + textSize +
+      ", underline=" + underline +
+      ", textScaleX=" + textScaleX +
+      ", textScaleY=" + textScaleY +
+      ", letterSpacing=" + letterSpacing +
+      ", lineSpacing=" + lineSpacing +
+      ", topPadding=" + topPadding +
+      ", leftPadding=" + leftPadding +
+      ", ali=" + ali +
+      ", style=" + style +
+      ", font=" + font +
+      ", path='" + path + '\'' +
+      '}';
+  }
 }

@@ -19,6 +19,7 @@ import {
 import { useCompany } from "../context/CompanyContext";
 import SalesReport from "./SalesReport";
 import { QRCodeCanvas } from "qrcode.react";
+import QRCode from "qrcode";
 
 /* =========================
    TAX CALCULATION
@@ -126,6 +127,71 @@ const branchcode = localStorage.getItem("branch_code")||""
     const random = Math.floor(Math.random() * 100000); // 5 digit random
     return `TXN-${timestamp}-${random}`;
   };
+  const showQRonLCD = async (qrString: string) => {
+  try {
+    alert("1. QR received");
+
+    if (!qrString) {
+      alert("QR String is empty");
+      return;
+    }
+
+    alert("2. Generating Base64");
+
+    const dataUrl = await QRCode.toDataURL(qrString);
+
+    alert("3. Base64 Generated");
+
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+
+    alert("4. Base64 Length : " + base64.length);
+
+    if (!(window as any).SkposLCD) {
+      alert("❌ SkposLCD plugin not found");
+      return;
+    }
+
+    alert("5. Plugin Found");
+
+    (window as any).SkposLCD.wakeUp(
+
+      () => {
+
+        alert("6. LCD Wake Success");
+
+        (window as any).SkposLCD.show(
+
+          base64,
+
+          () => {
+            alert("✅ QR displayed on LCD");
+            console.log("LCD Success");
+          },
+
+          (err: any) => {
+            alert("❌ LCD SHOW ERROR\n\n" + JSON.stringify(err));
+            console.error(err);
+          }
+
+        );
+
+      },
+
+      (err: any) => {
+        alert("❌ LCD Wake Error\n\n" + JSON.stringify(err));
+        console.error(err);
+      }
+
+    );
+
+  } catch (e: any) {
+
+    alert("❌ Exception\n\n" + e.message);
+
+    console.error(e);
+
+  }
+};
 const fetchPaymentQR = async () => {
   try {
     const transactionId = generateTransactionId();
@@ -750,7 +816,7 @@ useEffect(() => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {!printerConnected ? (
+                  {/* {!printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />
@@ -771,7 +837,39 @@ useEffect(() => {
                     >
                       {loading ? "Processing..." : "Submit & Print 🧾"}
                     </button>
-                  )}
+                  )} */}
+                  {!printerConnected ? (
+  <PrinterSelector
+    onConnected={() => setPrinterConnected(true)}
+  />
+) : (
+  <>
+    <button
+      type="button"
+      onClick={() => showQRonLCD("https://google.com")}
+      className="w-full bg-red-600 text-white font-semibold py-3 rounded-xl mb-3"
+    >
+      Test LCD QR
+    </button>
+
+    <button
+      disabled={loading}
+      onClick={() => handlePrintBill()}
+      className="w-full text-white font-semibold py-3 rounded-xl transition"
+      style={{
+        backgroundColor: mainBlue,
+      }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.backgroundColor = hoverBlue;
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.backgroundColor = mainBlue;
+      }}
+    >
+      {loading ? "Processing..." : "Submit & Print 🧾"}
+    </button>
+  </>
+)}
                 </div>
               </div>
             </div>

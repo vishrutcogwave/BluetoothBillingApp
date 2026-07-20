@@ -24,8 +24,8 @@ interface IPrinterService {
      *
      * @param text       text content
      * @param textFormat text format
-     * @param textWidth  maximum text width, <384px
-     * @param align      The alignment of the maximum text width relative to the 384px printing paper
+     * @param textWidth  maximum text width
+     * @param align      The alignment of the maximum text width relative to the printing paper
      *                   The default is 0. 0--Align left, 1--Align center, 2--Align right
      * @return Print result
      */
@@ -154,7 +154,32 @@ interface IPrinterService {
      *
      * @param bitmap Android bitmap object
      * @return Result
+     * @since PrinterService v1.5.9
      */
     int showLcdBitmap(in Bitmap bitmap);
 
+    /**
+     * Control the status of the customer display LCD
+     *
+     * @param flag 0--init 1--wakeup LCD 2--sleep LCD 3--clear LCD 4--reset LCD display
+     * @return Result
+     * @since PrinterService v1.6.3
+     */
+    int configLcd(int flag);
+
+    /**
+     * Open cash drawer
+     *
+     * @return Result
+     * @since PrinterService v1.6.1
+     */
+    int openCashBox();
+
+    /**
+     * Trigger infrared scan
+     *
+     * @return Result
+     * @since PrinterService v1.7.0
+     */
+    int triggerQscScan();
 }

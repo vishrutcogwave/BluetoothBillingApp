@@ -1,13 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="com.cogwave.apk" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <feature name="Permissions">
-        <param name="android-package" value="com.android.plugins.Permissions" />
-    </feature>
-    <feature name="Device">
-        <param name="android-package" value="org.apache.cordova.device.Device" />
-    </feature>
-    <feature name="BluetoothSerial">
-        <param name="android-package" value="com.megster.cordova.BluetoothSerial" />
+    <feature name="SkposLCD">
+        <param name="android-package" value="com.cogwave.skposlcd.SkposLCD" />
     </feature>
     <name>CogwaveApp</name>
     <description>
@@ -44,11 +38,9 @@
     <splash density="port-xxhdpi" src="resources/android/splash/drawable-port-xxhdpi-screen.png" />
     <splash density="port-xxxhdpi" src="resources/android/splash/drawable-port-xxxhdpi-screen.png" />
     <preference name="loglevel" value="DEBUG" />
+    <preference name="GradlePluginKotlinEnabled" value="true" />
     <preference name="AndroidPersistentFileLocation" value="Internal" />
     <preference name="android-minSdkVersion" value="22" />
     <preference name="android-targetSdkVersion" value="33" />
     <preference name="android-compileSdkVersion" value="33" />
-    <feature name="SkposLCD">
-        <param name="android-package" value="com.cogwave.skposlcd.SkposLCD" />
-    </feature>
 </widget>

@@ -11,6 +11,7 @@
     <allow-navigation href="*" />
     <allow-intent href="*" />
     <platform name="android">
+    <preference name="GradlePluginKotlinEnabled" value="true" />
         <icon src="resources/icon.png" />
         <uses-permission android:name="android.permission.BLUETOOTH" />
         <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />

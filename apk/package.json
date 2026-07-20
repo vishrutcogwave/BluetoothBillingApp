@@ -20,9 +20,7 @@
     "cordova-plugin-skposlcd": "file:plugins/skposlcd"
   },
   "cordova": {
-    "platforms": [
-      "android"
-    ],
+    "platforms": [],
     "plugins": {
       "cordova-plugin-android-permissions": {},
       "cordova-plugin-device": {},

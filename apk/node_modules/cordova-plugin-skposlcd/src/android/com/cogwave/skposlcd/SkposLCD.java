@@ -31,7 +31,7 @@ private final ServiceConnection serviceConnection = new ServiceConnection() {
         .setMessage("Printer Service Connected")
         .setPositiveButton("OK", null)
         .show()
-);
+
 );
     }
 

@@ -82,15 +82,18 @@ class PrinterService {
      WRITE (SAFE)
      ========================= */
 async write(bytes: Uint8Array): Promise<void> {
+  let connected = await this.isConnected();
 
-  // alert("WRITE START");
+  if (!connected) {
+    const ok = await this.autoReconnect();
 
-  // const connected =
-  //   await this.isConnected();
+    if (!ok) {
+      throw new Error("Printer not connected");
+    }
 
-  // alert(
-  //   "CONNECTED: " + connected
-  // );
+    // Wait for socket to become ready
+    await new Promise((resolve) => setTimeout(resolve, 800));
+  }
 
   let binary = "";
 
@@ -99,23 +102,7 @@ async write(bytes: Uint8Array): Promise<void> {
   }
 
   return new Promise((resolve, reject) =>
-    bluetoothSerial.write(
-      binary,
-
-      () => {
-        alert("✅ PRINT SUCCESS");
-        resolve();
-      },
-
-      (e:any) => {
-        alert(
-          "❌ PRINT FAILED: " +
-          JSON.stringify(e)
-        );
-
-        reject(e);
-      }
-    )
+    bluetoothSerial.write(binary, resolve, reject)
   );
 }
 
@@ -267,6 +254,7 @@ async printBill(
       }
 
       await this.connect(paired[0].address);
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
 
 

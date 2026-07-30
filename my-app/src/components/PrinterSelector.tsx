@@ -55,11 +55,12 @@ export default function PrinterSelector({ onConnected }: Props) {
     //   printer.address
     // );
 
-    await printerService.connect(printer.address);
+await printerService.connect(printer.address);
 
-    // alert("✅ Connected Successfully");
+// Give Bluetooth time to establish socket
+await new Promise((resolve) => setTimeout(resolve, 800));
 
-    onConnected();
+onConnected();
   } catch (err: any) {
     alert(
       "❌ ERROR:\n" +

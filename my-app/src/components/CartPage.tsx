@@ -439,7 +439,32 @@ const Branchcode =localStorage.getItem("branch_code") || ""
     const billNoResponse = await getbillnouseorderid(transactionId,Number(selectedOutlet?.id || 0),Branchcode);
 
     console.log("✅ Bill No Response:", billNoResponse);
+let connected = await printerService.isConnected();
 
+if (!connected) {
+  let ok = await printerService.autoReconnect();
+
+  if (!ok) {
+    const paired = await printerService.getPairedDevices();
+
+    if (!paired.length) {
+      alert("No paired printer found");
+      return;
+    }
+
+    await printerService.connect(paired[0].address);
+
+    // Wait for Bluetooth socket to become ready
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    connected = await printerService.isConnected();
+
+    if (!connected) {
+      alert("Printer connection failed");
+      return;
+    }
+  }
+}
     // ================= PRINT =================
     await printerService.printBill(
       items,
@@ -750,7 +775,7 @@ useEffect(() => {
 
                 {/* ✅ KEEP YOUR ORIGINAL PRINTER + SUBMIT LOGIC */}
                 <div className="space-y-4 mt-6">
-                  {!printerConnected ? (
+                  {printerConnected ? (
                     <PrinterSelector
                       onConnected={() => setPrinterConnected(true)}
                     />

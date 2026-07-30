@@ -37,7 +37,7 @@ export default function LandingPage() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
-
+const [initialized, setInitialized] = useState(false);
   const [items, setItems] = useState<FoodItem[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -146,20 +146,48 @@ export default function LandingPage() {
   };
 
   // ================= INITIAL LOAD =================
-  useEffect(() => {
-    fetchOutlets();
-    fetchCategories();
-    fetchCompanyInfo();
-  }, []);
+useEffect(() => {
+  const token = localStorage.getItem("access_token");
+  const baseUrl = localStorage.getItem("BASE_URL");
 
+  if (
+    !token ||
+    !baseUrl ||
+    location.pathname === "/" ||
+    location.pathname === "/cart"
+  ) {
+    return;
+  }
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      await Promise.all([
+        fetchOutlets(),
+        fetchCategories(),
+        fetchCompanyInfo(),
+      ]);
+
+      setInitialized(true);
+    } catch (err) {
+      console.error("Initial load failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, [location.pathname]);
   // ================= FETCH ITEMS =================
-  useEffect(() => {
-    if (activeCategory === null || activeOutlet === null) return;
+useEffect(() => {
+  if (!initialized) return;
 
+  if (activeCategory === null || activeOutlet === null) return;
     const fetchItems = async () => {
       try {
         setLoading(true);
-const  Branchcode = localStorage.getItem("branch_code")||"  "
+const Branchcode = localStorage.getItem("branch_code") || "";
         const data = await retryRequest(() =>
           getFoodsImage(activeOutlet, activeCategory,"0",Branchcode),
         );
@@ -179,91 +207,83 @@ const  Branchcode = localStorage.getItem("branch_code")||"  "
     };
 
     fetchItems();
-  }, [activeCategory, activeOutlet]);
+}, [activeCategory, activeOutlet, initialized]);
 
-  const isLogin =
-    location.pathname === "/" ||
-    location.pathname === "/cart" ||
-    location.pathname === "/sales-report" ||
-    location.pathname === "/item-sales-report";
+const isLogin = location.pathname === "/";
+return (
+  <CartProvider>
+    <div className="min-h-screen flex bg-gray-100">
+      {/* ================= SIDEBAR ================= */}
+   {!["/", "/cart", "/sales-report", "/item-sales-report"].includes(location.pathname) && (
+  <CategorySidebar
+    active={activeCategory ?? 0}
+    onSelect={setActiveCategory}
+    categories={categories}
+    outlets={outlets}
+    activeOutlet={activeOutlet}
+    onSelectOutlet={(outletId) => {
+      setActiveOutlet(outletId);
 
-  return (
-    <CartProvider>
-      <div className="min-h-screen flex bg-gray-100">
-        {/* ================= SIDEBAR ================= */}
-        {location.pathname !== "/cart" &&
-          location.pathname !== "/sales-report" &&
-          location.pathname !== "/item-sales-report" &&
-          location.pathname !== "/" && (
-            <CategorySidebar
-              active={activeCategory ?? 0}
-              onSelect={setActiveCategory}
-              categories={categories}
-              outlets={outlets}
-              activeOutlet={activeOutlet}
-              onSelectOutlet={(outletId) => {
-                setActiveOutlet(outletId);
+      const outlet = outlets.find((o) => o.id === outletId);
 
-                const outlet = outlets.find((o) => o.id === outletId);
+      if (outlet) {
+        outletDispatch({
+          type: "SET_OUTLET",
+          payload: outlet,
+        });
 
-                if (outlet) {
-                  outletDispatch({
-                    type: "SET_OUTLET",
-                    payload: outlet,
-                  });
+        localStorage.setItem(
+          "selectedOutlet",
+          JSON.stringify(outlet)
+        );
+      }
+    }}
+  />
+)}
 
-                  localStorage.setItem(
-                    "selectedOutlet",
-                    JSON.stringify(outlet),
-                  );
-                }
-              }}
-            />
-          )}
+      {/* ================= MAIN ================= */}
+      <main className={`flex-1 ${!isLogin ? "pt-[150px] md:pt-0" : ""}`}>
+        <Routes>
+          <Route path="/" element={<Loginpage />} />
 
-        {/* ================= MAIN ================= */}
-        <main className={`flex-1 ${!isLogin ? "pt-[150px] md:pt-0" : ""}`}>
-          <Routes>
-            <Route path="/" element={<Loginpage />} />
+          <Route
+            path="/itemsPage"
+            element={
+              loading || !activeOutlet ? (
+                <FoodLoader />
+              ) : (
+                <ItemsPage
+                  items={items.map((item) => ({
+                    id: item.ItemCode,
+                    title: item.ItemName,
+                    image: item.thumb || FALLBACK_IMAGE,
+                    description: item.description || "",
+                    price: item.CurrentPrize || item.ItemRate,
+                    spicy: false,
+                    catcode: item.CatCode,
+                  }))}
+                  activeOutlet={activeOutlet}
+                />
+              )
+            }
+          />
 
-            <Route
-              path="/itemsPage"
-              element={
-                loading ? (
-                  <FoodLoader />
-                ) : (
-                  <ItemsPage
-                    items={items.map((item) => ({
-                      id: item.ItemCode,
-                      title: item.ItemName,
-                      image: item.thumb || FALLBACK_IMAGE,
-                      description: item.description || "",
-                      price: item.CurrentPrize || item.ItemRate,
-                      spicy: false,
-                      catcode: item.CatCode,
-                    }))}
-                    activeOutlet={activeOutlet || 0}
-                  />
-                )
-              }
-            />
+          <Route path="/cart" element={<CartPage />} />
 
-            <Route path="/cart" element={<CartPage />} />
+          <Route
+            path="/sales-report"
+            element={<SalesReport onBack={() => navigate("/itemsPage", { replace: true })} />}
+          />
 
-            <Route
-              path="/sales-report"
-              element={<SalesReport onBack={() => navigate("/itemsPage")} />}
-            />
-
-            <Route
-              path="/item-sales-report"
-              element={
-                <ItemSalesReport onBack={() => navigate("/itemsPage")} />
-              }
-            />
-          </Routes>
-        </main>
-      </div>
-    </CartProvider>
-  );
+          <Route
+            path="/item-sales-report"
+            element={
+              <ItemSalesReport onBack={() =>navigate("/itemsPage", { replace: true })} />
+            }
+          />
+        </Routes>
+      </main>
+    </div>
+  </CartProvider>
+);
 }
